@@ -53,14 +53,25 @@ class Handler(SimpleHTTPRequestHandler):
                 # Materialize editable content into index.html so Git tracks the actual page.
                 def esc(v):
                     return html.escape(str(v or ""), quote=True)
+
+                def visual_html(d):
+                    typ=d.get("visualType","integration")
+                    if d.get("displayType","visual")=="image" and d.get("image"):
+                        return '<div class="visual project-visual image-visual"><div class="image-stage"><img alt="Project preview" src="'+esc(d.get("image",""))+'"><div class="image-overlay"><span>VIEW PREVIEW</span><b>↗</b></div><div class="image-shine"></div></div></div>'
+                    if typ=="dashboard":
+                        return '<div class="visual dashboard"><div class="dashhead"><b>EXECUTIVE BI</b><span>MANAGEMENT VIEW</span></div><div class="metrics"><div><b>KPIs</b><small>Executive overview</small></div><div><b>TRENDS</b><small>Performance view</small></div><div><b>INSIGHT</b><small>Decision support</small></div></div><div class="chart"><span style="height:42%"></span><span style="height:60%"></span><span style="height:51%"></span><span style="height:78%"></span><span style="height:67%"></span><span style="height:88%"></span><span style="height:76%"></span></div></div>'
+                    if typ=="validation":
+                        return '<div class="visual validation-visual"><div class="validation-head"><b>DATA QUALITY CHECK</b><small>PAYMENT + MASTER DATA</small></div><div class="validation-flow"><div><b>PAYMENT DATA</b><small>Transactions</small></div><span>→</span><div><b>CHECK</b><small>Mismatch · Missing · Error</small></div><span>→</span><div><b>MASTER DATA</b><small>Reference validation</small></div><span>→</span><div class="valid"><b>✓ VALID</b><small>Ready for use</small></div></div></div>'
+                    return '<div class="visual integration"><div class="integration-head"><span>DATA INTEGRATION</span><small>REPORTING DATASET</small></div><div class="source-row"><div><b>SQL</b><small>Source data</small></div><div><b>EXCEL</b><small>Business input</small></div><div><b>PYTHON</b><small>Transform</small></div></div><div class="integration-center"><span>↓</span><b>RELIABLE DATASET</b><span>↓</span></div><div class="integration-output"><b>POWER BI</b><small>Business analysis</small></div></div>'
+
                 projects=[]
                 for i,d in enumerate(obj.get("projects") or [],1):
                     projects.append(
                         '<article class="project" data-project data-display-type="'+esc(d.get("displayType","visual"))+'" data-visual-type="'+esc(d.get("visualType","integration"))+'" data-image="'+esc(d.get("image",""))+'">'
                         '<div class="project-title-row"><span class="project-number">'+f"{i:02d}"+'</span><h2>'+esc(d.get("title","New project"))+'</h2></div>'
                         '<div class="meta"><span>'+esc(d.get("meta","ANALYTICS"))+'</span></div>'
-                        '<div class="visual project-visual"></div>'
-                        '<div class="info"><div><p>'+esc(d.get("description",""))+'</p><small class="outcome">'+(("OUTCOME · "+esc(d.get("outcome"))) if d.get("outcome") else "")+'</small></div>'
+                        +visual_html(d)
+                        +'<div class="info"><div><p>'+esc(d.get("description",""))+'</p><small class="outcome">'+(("OUTCOME · "+esc(d.get("outcome"))) if d.get("outcome") else "")+'</small></div>'
                         '<div class="project-actions"><a href="#contact">View project ↗</a></div></div></article>'
                     )
                 exps=[]
