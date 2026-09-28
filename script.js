@@ -1,6 +1,6 @@
-const EDIT_MODE=false; const profileInput=document.getElementById("profileImageInput");
+const EDIT_MODE=location.protocol==="file:"||location.hostname==="localhost"||location.hostname==="127.0.0.1"; const profileInput=document.getElementById("profileImageInput");
 const editorPanel=document.getElementById("editorPanel");
-const editToggle=document.getElementById("editToggle");
+let editToggle=document.getElementById("editToggle"); if(EDIT_MODE&&!editToggle){editToggle=document.createElement("button");editToggle.id="editToggle";editToggle.type="button";editToggle.className="talk edit-local";editToggle.textContent="Edit portfolio";document.querySelector(".header-tools")?.appendChild(editToggle)}
 const closeEditor=document.getElementById("closeEditor");
 const experienceList=document.getElementById("experienceList");
 const defaultProfile={name:"Sofwan Kaji",role:"Data Analytics Officer",company:"THUNDER FINFIN CO., LTD.",about:"I build analytics experiences that connect raw data with the people who need to act on it."};
