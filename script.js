@@ -1,6 +1,7 @@
 const IS_FILE=location.protocol==="file:";const EDIT_MODE=IS_FILE||location.hostname==="localhost"||location.hostname==="127.0.0.1";
 if(IS_FILE){fetch("http://127.0.0.1:8788/index.html",{cache:"no-store"}).then(function(r){if(r.ok)location.replace("http://127.0.0.1:8788/index.html")}).catch(function(){});}
-const LOCAL_API=(location.hostname==="localhost"||location.hostname==="127.0.0.1")&&location.protocol!=="file:";
+const LOCAL_API=location.hostname==="localhost"||location.hostname==="127.0.0.1"||location.protocol==="file:";
+const API_BASE=location.protocol==="file:"?"http://127.0.0.1:8788":"";
 async function buildPublishedHtml(){
   const data={
     profile:JSON.parse(localStorage.getItem("portfolioProfile")||"null")||defaultProfile,
@@ -9,14 +10,14 @@ async function buildPublishedHtml(){
     projects:JSON.parse(localStorage.getItem("portfolioProjects")||"[]")
   };
   try{
-    const response=await fetch("/api/publish",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+    const response=await fetch(API_BASE+"/api/publish",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
     if(!response.ok)throw new Error("Publish failed: "+response.status);
     return true;
   }catch(err){console.warn("Portfolio publish failed",err);return false;}
 }
-async function syncLocalData(){if(!LOCAL_API)return true;const data={profile:JSON.parse(localStorage.getItem("portfolioProfile")||"null")||{},profileImage:localStorage.getItem("portfolioProfileImage")||"",experiences:JSON.parse(localStorage.getItem("portfolioExperiences")||"[]"),projects:JSON.parse(localStorage.getItem("portfolioProjects")||"[]")};try{const response=await fetch("/api/data",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});if(!response.ok)throw new Error("Data sync failed: "+response.status);return true;}catch(err){console.warn("Portfolio data sync failed",err);return false;}}
+async function syncLocalData(){if(!LOCAL_API)return true;const data={profile:JSON.parse(localStorage.getItem("portfolioProfile")||"null")||{},profileImage:localStorage.getItem("portfolioProfileImage")||"",experiences:JSON.parse(localStorage.getItem("portfolioExperiences")||"[]"),projects:JSON.parse(localStorage.getItem("portfolioProjects")||"[]")};try{const response=await fetch(API_BASE+"/api/data",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});if(!response.ok)throw new Error("Data sync failed: "+response.status);return true;}catch(err){console.warn("Portfolio data sync failed",err);return false;}}
 function applyData(d){if(!d)return;if(d.profile&&Object.keys(d.profile).length){localStorage.setItem("portfolioProfile",JSON.stringify(d.profile));applyProfile(d.profile)}if("profileImage" in d){if(d.profileImage){localStorage.setItem("portfolioProfileImage",d.profileImage);const img=document.getElementById("profileImage"),ph=document.getElementById("profileImagePlaceholder");if(img){img.src=d.profileImage;img.style.display="block"}if(ph)ph.style.display="none"}}if(Array.isArray(d.experiences)){localStorage.setItem("portfolioExperiences",JSON.stringify(d.experiences));rebuildExperiences(d.experiences)}if(Array.isArray(d.projects)){localStorage.setItem("portfolioProjects",JSON.stringify(d.projects));localStorage.setItem("portfolioProjectsVersion","4");rebuildProjects(d.projects)}}
-function loadLocalData(){if(!LOCAL_API)return;fetch("/api/data").then(r=>r.ok?r.json():null).then(d=>{if(!d)return;const hasSaved=(d.profile&&Object.keys(d.profile).length)||d.profileImage||(Array.isArray(d.experiences)&&d.experiences.length)||(Array.isArray(d.projects)&&d.projects.length);if(hasSaved)applyData(d);else syncLocalData()}).catch(()=>{});}
+function loadLocalData(){if(!LOCAL_API)return;fetch(API_BASE+"/api/data").then(r=>r.ok?r.json():null).then(d=>{if(!d)return;const hasSaved=(d.profile&&Object.keys(d.profile).length)||d.profileImage||(Array.isArray(d.experiences)&&d.experiences.length)||(Array.isArray(d.projects)&&d.projects.length);if(hasSaved)applyData(d);else syncLocalData()}).catch(()=>{});}
 function loadPublishedData(){if(location.protocol==="file:"||LOCAL_API)return;fetch("portfolio_data.json").then(r=>r.ok?r.json():null).then(d=>applyData(d)).catch(()=>{});}
  const profileInput=document.getElementById("profileImageInput");
 const editorPanel=document.getElementById("editorPanel");
