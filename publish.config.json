@@ -1,0 +1,7 @@
+{
+  "repository": "sofwankaji/portfolio",
+  "branch": "main",
+  "basePath": "/portfolio",
+  "siteUrl": "https://sofwankaji.github.io/portfolio/",
+  "workflow": "pages.yml"
+}

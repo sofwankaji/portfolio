@@ -1,3 +1,20 @@
+node_modules/
+apps/web/out/
+apps/studio/dist/
+.history/
+content/drafts/
+.env
+.env.*
+!.env.example
+*.log
+apps/web/deploy/
+content/projects/*.json
+content/assets/uploads/*
+content/media.json
+__pycache__/
+*.pyc
+
+# Existing repository rules
 EDIT.bat
 UPDATE.bat
 local_server.py
