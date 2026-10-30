@@ -1,8 +1,8 @@
 {
-  "id": "customer-clustering",
-  "slug": "customer-clustering",
-  "title": "Customer Clustering Using K-Means",
-  "headline": "Finding the people behind the patterns.",
+  "id": "project-d08d3482",
+  "slug": "project-d08d3482",
+  "title": "Customer Clustering Using K-Means (copy)",
+  "headline": "Finding the people behind the patterns. (copy)",
   "summary": "A customer segmentation study that turns income and spending behavior into a more useful picture of an audience.",
   "category": "analysis",
   "context": "Independent project",
@@ -41,7 +41,7 @@
       "html": "<h2>New section</h2><p>Write your story here.</p>"
     }
   ],
-  "order": 5,
-  "revision": 6,
-  "updatedAt": "2026-10-30T10:29:20.340Z"
+  "order": 10,
+  "revision": 2,
+  "updatedAt": "2026-10-30T11:16:53.335Z"
 }
