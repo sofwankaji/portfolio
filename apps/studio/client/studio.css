@@ -58,3 +58,25 @@
 @media(max-width:700px){.studio-project-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:15px 12px}.studio-new-project{min-height:169px}.studio-project-info{padding:12px;min-height:65px}.project-shelf-actions{gap:4px}.project-shelf-actions .button{font-size:11px;padding:10px}.notion-split{grid-template-columns:1fr!important}.notion-split[data-side=right]>figure{order:0}.notion-sized-image{width:100%!important}.notion-size-control input[type=range]{width:90px}}
 @media(pointer:coarse){.studio-card-menu summary{width:40px;height:40px}.studio-card-actions button{min-height:44px}.notion-layout-controls button{min-height:40px}}
 @media(prefers-reduced-motion:reduce){.studio-project-card{transition:none}.studio-project-card:hover{transform:none}}
+
+/* Menus live in the browser's top layer, above every grid row. */
+.studio-card-menu .studio-menu-trigger{display:grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid #dce4e9;border-radius:10px;background:#ffffffed;color:#354c5b;font:22px/1 'Noto Sans Thai',sans-serif;cursor:pointer}
+.studio-menu-trigger:focus-visible{outline:2px solid #597f98;outline-offset:3px}
+.studio-card-actions[popover]{position:fixed;inset:auto;margin:0;width:190px;min-width:0;max-width:calc(100vw - 24px);overflow:auto;overscroll-behavior:contain;padding:6px;border:1px solid #dce4e9;border-radius:12px;box-shadow:0 12px 40px #26354024;background:#fff;color:#263540;z-index:1000}
+.studio-card-actions[popover]::backdrop{background:transparent}
+.studio-card-actions[popover]:popover-open{animation:project-menu-in .14s ease-out}
+.studio-card-actions[popover] button{font-family:'Noto Sans Thai',sans-serif;font-size:12px;min-height:40px}
+.studio-card-actions[popover] button:focus-visible{outline:2px solid #597f98;outline-offset:-2px;background:#edf3f7}
+@keyframes project-menu-in{from{opacity:0;translate:0 -3px}to{opacity:1;translate:0 0}}
+
+/* A real empty grid cell opens while neighbouring cards move into their new slots. */
+.studio-project-grid{position:relative}
+.studio-project-grid.is-sorting{user-select:none;cursor:grabbing}
+.studio-project-grid.is-sorting .studio-project-card{transition:none;transform:none;cursor:grabbing}
+.studio-project-card.is-dragging{opacity:0}
+.project-drop-slot{min-width:0;box-sizing:border-box;border:1.5px dashed #88a5ba;border-radius:15px;background:#e4edf4;box-shadow:inset 0 0 0 5px #f3f7fa;pointer-events:none}
+.project-drag-ghost{position:fixed!important;left:-10000px!important;top:0!important;z-index:2000;margin:0;pointer-events:none;transform:rotate(-1.5deg);box-shadow:0 20px 42px #26354030;opacity:1!important}
+@media(pointer:coarse){.studio-card-menu .studio-menu-trigger{width:40px;height:40px}.studio-card-actions[popover] button{min-height:44px}}
+@media(prefers-reduced-motion:reduce){.studio-card-actions[popover]:popover-open{animation:none}.project-drag-ghost{transform:none}}
+
+.project-drag-surface{position:fixed;inset:0;z-index:900;background:transparent;cursor:grabbing}

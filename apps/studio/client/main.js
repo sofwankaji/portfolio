@@ -1,4 +1,5 @@
 import {mountWriter} from './notion-writer.js';
+import {attachProjectMenu,mountProjectGrid} from './project-grid.js';
 const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -7,7 +8,7 @@ const initialHash=location.hash.slice(1);
 const initialView=['publish','profile','projects','media'].includes(initialHash)?initialHash:initialHash?'editor':'projects';
 let profile=null,profileDirty=false,currentView='editor',insertIndex=null,writer=null,savedEditVersion=0,publishData=null,publishPoll=null,pushRequest=false;
 let token='',all=[],media=[],project=null,activeEditor=null,undo=[],redo=[],editVersion=0,draftVersion=-1,draftTimer=null,draftWork=Promise.resolve(),saving=false,picker={multiple:false,selected:new Set(),callback:null},uploadContext='picker',toastTimer;
-const workingCopies=new Map();let draggingProject=null,collectionBusy=false;
+const workingCopies=new Map();let draggingProject=null,collectionBusy=false,gridInteraction=null;const projectMenus=[];
 const labels={text:'ข้อความ',image:'รูปภาพ',gallery:'แกลเลอรี',split:'รูป + ข้อความ',video:'วิดีโอ',quote:'คำพูด',divider:'เส้นคั่น'};
 function toast(text,error=false){$('#toast').textContent=text;$('#toast').style.background=error?'#803d3d':'';$('#toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').hidden=true,5500);}
 function status(text){$('#save-state').textContent=text;}
@@ -85,7 +86,7 @@ async function persistProjectOrder(ids){
  try{await persistDraft();await draftWork;const revisions=new Map(all.map(p=>[p.id,p.revision]));all=await api('/projects/reorder',{method:'POST',body:JSON.stringify({projects:ids.map(id=>({id,revision:revisions.get(id)}))})});
   for(const p of all){const copy=workingCopies.get(p.id);if(copy){copy.order=p.order;copy.revision=p.revision;}if(project?.id===p.id){project.order=p.order;project.revision=p.revision;}}
   renderProjectList();renderProjects();toast('บันทึกลำดับแล้ว · Push เพื่ออัปเดตเว็บ');
- }catch(e){toast(e.message,true);}finally{collectionBusy=false;grid.classList.remove('is-saving');}
+ }catch(e){renderProjects();toast(e.message,true);}finally{collectionBusy=false;grid.classList.remove('is-saving');}
 }
 function moveProject(id,offset){const ids=[...all].sort((a,b)=>a.order-b.order).map(p=>p.id),index=ids.indexOf(id),target=index+offset;if(target<0||target>=ids.length)return;[ids[index],ids[target]]=[ids[target],ids[index]];return persistProjectOrder(ids);}
 async function trashFromCard(id){
@@ -96,19 +97,20 @@ async function showTrash(){
  try{const entries=await api('/trash'),list=$('#trash-list');list.replaceChildren();if(!entries.length)list.append(el('p','ถังพักยังว่าง'));entries.forEach(item=>{const row=el('div',undefined,'trash-row'),copy=el('div');copy.append(el('strong',item.title),el('small',new Date(item.deletedAt).toLocaleString('th-TH')));row.append(copy,button('เรียกคืน',async()=>{try{await api('/trash/restore',{method:'POST',body:JSON.stringify({file:item.file})});const fresh=await api('/bootstrap');all=fresh.projects;renderProjectList();renderProjects();await showTrash();toast('เรียกคืนผลงานแล้ว');}catch(e){toast(e.message,true);}}));list.append(row);});if(!$('#trash-dialog').open)$('#trash-dialog').showModal();}catch(e){toast(e.message,true);}
 }
 function renderProjects(){
+ gridInteraction?.destroy();projectMenus.splice(0).forEach(menu=>menu.destroy());
  const grid=$('#studio-project-grid');grid.replaceChildren();const sorted=[...all].sort((a,b)=>a.order-b.order||a.id.localeCompare(b.id));$('#studio-project-count').textContent=all.length+' ผลงาน';
  const add=button('',()=>newProject(),'studio-new-project');add.append(el('span','+','new-project-symbol'),el('strong','เพิ่มผลงาน'));add.setAttribute('aria-label','เพิ่มผลงานใหม่');grid.append(add);
  sorted.forEach((saved,index)=>{
   const p=workingCopies.get(saved.id)||(saved.id===project?.id?project:saved),card=el('article',undefined,'studio-project-card'),open=button('',()=>{if(!draggingProject)selectProject(p.id);},'studio-card-open');open.setAttribute('aria-label','แก้ไขผลงาน '+p.title);card.draggable=true;card.dataset.project=p.id;card.classList.toggle('is-hidden',!!p.keepDraft);
   const visual=el('div',undefined,'studio-project-cover'),img=el('img');const fallback=p.id==='pizza-sales'?'sales':p.id==='ufund-risk'?'risk':p.id==='attach-rate'?'connections':p.category==='automation'?'workflow':p.category==='analysis'?'connections':'risk';img.src=p.cover?.src||'/covers/'+fallback+'.svg';img.alt=p.cover?.alt||p.title;img.loading='lazy';img.draggable=false;visual.append(img);const info=el('div',undefined,'studio-project-info');info.append(el('strong',p.title));open.append(visual,info);card.append(open);
-  const menu=el('details',undefined,'studio-card-menu'),summary=el('summary','⋯');summary.setAttribute('aria-label','จัดการ '+p.title);summary.title='จัดการผลงาน';const actions=el('div',undefined,'studio-card-actions');const action=(label,fn,disabled=false)=>{const b=button(label,()=>{menu.open=false;fn();});b.disabled=disabled;b.setAttribute('aria-label',label+' '+p.title);actions.append(b);};
-  action('แก้ไข',()=>selectProject(p.id));action('เลื่อนขึ้น',()=>moveProject(p.id,-1),index===0);action('เลื่อนลง',()=>moveProject(p.id,1),index===sorted.length-1);action('ทำสำเนา',async()=>{await selectProject(p.id);await newProject(true);});action(p.keepDraft?'แสดงบนเว็บ':'ซ่อนจากเว็บ',async()=>{await selectProject(p.id);project.keepDraft=!p.keepDraft;project.status=project.keepDraft?'draft':'published';changed();await persistDraft();switchView('projects');});action('ลบ',()=>trashFromCard(p.id));menu.append(summary,actions);card.append(menu);
+  const menu=el('div',undefined,'studio-card-menu'),summary=button('⋯',()=>{},'studio-menu-trigger');summary.setAttribute('aria-label','จัดการ '+p.title);summary.title='จัดการผลงาน';const actions=el('div',undefined,'studio-card-actions');let controller;const action=(label,fn,disabled=false)=>{const b=button(label,()=>{controller.close();Promise.resolve().then(fn).catch(e=>toast(e.message,true));});b.disabled=disabled;b.setAttribute('aria-label',label+' '+p.title);actions.append(b);};
+  action('แก้ไข',()=>selectProject(p.id));action('เลื่อนขึ้น',()=>moveProject(p.id,-1),index===0);action('เลื่อนลง',()=>moveProject(p.id,1),index===sorted.length-1);action('ทำสำเนา',async()=>{await selectProject(p.id);await newProject(true);});action(p.keepDraft?'แสดงบนเว็บ':'ซ่อนจากเว็บ',async()=>{await selectProject(p.id);project.keepDraft=!p.keepDraft;project.status=project.keepDraft?'draft':'published';changed();await persistDraft();switchView('projects');});action('ลบ',()=>trashFromCard(p.id));menu.append(summary);card.append(menu);
   if(p.keepDraft||p.title==='Untitled project'){const dot=el('span',undefined,'studio-draft-dot');dot.title=p.keepDraft?'ซ่อนจากเว็บ':'ยังไม่มีชื่อ';dot.setAttribute('aria-label',dot.title);card.append(dot);}
-  card.ondragstart=e=>{if(e.target.closest('details')){e.preventDefault();return;}draggingProject=p.id;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',p.id);card.classList.add('is-dragging');};card.ondragend=()=>{draggingProject=null;$$('.drop-target,.is-dragging').forEach(n=>n.classList.remove('drop-target','is-dragging'));};card.ondragover=e=>{if(draggingProject&&draggingProject!==p.id){e.preventDefault();card.classList.add('drop-target');}};card.ondragleave=()=>card.classList.remove('drop-target');card.ondrop=e=>{e.preventDefault();card.classList.remove('drop-target');const source=draggingProject;if(!source||source===p.id)return;const ids=sorted.map(p=>p.id).filter(id=>id!==source);ids.splice(ids.indexOf(p.id),0,source);draggingProject=null;persistProjectOrder(ids);};
-  grid.append(card);
+
+  grid.append(card);controller=attachProjectMenu(summary,actions);projectMenus.push(controller);
  });
+ gridInteraction=mountProjectGrid(grid,{onReorder:persistProjectOrder,onDragState:id=>draggingProject=id});
 }
-document.addEventListener('click',event=>$$('.studio-card-menu[open]').forEach(menu=>{if(!menu.contains(event.target))menu.open=false;}));
 
 function renderProfile(){if(!profile)return;$$('[data-profile]').forEach(n=>n.value=profile[n.dataset.profile]);$('#profile-alt').value=profile.portrait?.alt||'';previewProfile();}
 function previewProfile(){if(!profile)return;const image=$('#profile-preview-image'),preview=$('#profile-upload-preview');image.hidden=!profile.portrait;$('#profile-placeholder').hidden=!!profile.portrait;$('#profile-preview-frame').dataset.crop=profile.crop;const position=profile.focalX+'% '+profile.focalY+'%';image.style.objectPosition=position;preview.style.backgroundPosition=position;preview.classList.toggle('has-image',!!profile.portrait);preview.style.backgroundImage=profile.portrait?'url("'+profile.portrait.src+'")':'none';if(profile.portrait)image.src=profile.portrait.src;$('#profile-preview-role').textContent=profile.role;$('#profile-preview-intro').textContent='I’m '+profile.name.split(' ')[0]+'. '+profile.intro;$('#profile-preview-name').textContent=profile.name;}
