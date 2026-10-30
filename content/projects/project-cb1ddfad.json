@@ -1,0 +1,32 @@
+{
+  "id": "project-cb1ddfad",
+  "slug": "project-cb1ddfad",
+  "title": "Ashitarueyo",
+  "headline": "Ashitarueyo",
+  "summary": "",
+  "category": "dashboard",
+  "context": "",
+  "role": "",
+  "tools": "",
+  "repo": "",
+  "demo": "",
+  "status": "published",
+  "keepDraft": false,
+  "cover": {
+    "src": "/assets/uploads/65e73a1b-d941-4368-9869-2ae997c547ea.webp",
+    "alt": "",
+    "caption": ""
+  },
+  "coverStyle": "",
+  "coverNote": "",
+  "blocks": [
+    {
+      "id": "fba28c5b-f415-45c0-afc2-019f5e659a25",
+      "type": "text",
+      "html": "<h2>sdagyadfh</h2><p>sfdgjfsgdfdhydfgh</p><p>fgjfgs</p><p>sfgjfg</p>"
+    }
+  ],
+  "order": 0,
+  "revision": 4,
+  "updatedAt": "2026-10-30T11:23:56.542Z"
+}

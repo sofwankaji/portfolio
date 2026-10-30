@@ -1,0 +1,32 @@
+{
+  "id": "project-a13b4236",
+  "slug": "project-a13b4236",
+  "title": "NAGOYA2",
+  "headline": "NAGOYA2",
+  "summary": "",
+  "category": "dashboard",
+  "context": "",
+  "role": "",
+  "tools": "",
+  "repo": "",
+  "demo": "",
+  "status": "published",
+  "keepDraft": false,
+  "cover": {
+    "src": "/assets/uploads/dfb2c832-6110-444d-a961-7df5d9b85408.webp",
+    "alt": "",
+    "caption": ""
+  },
+  "coverStyle": "",
+  "coverNote": "",
+  "blocks": [
+    {
+      "id": "3bc3076d-b888-4ae8-9a3b-efad68a88f4a",
+      "type": "text",
+      "html": "<h2>Test1</h2><ul><li><p>1</p></li><li><p>2</p></li><li><p>3</p></li><li><p>4</p></li></ul><p>Nordic</p><p>Test2</p><p></p>"
+    }
+  ],
+  "order": 11,
+  "revision": 15,
+  "updatedAt": "2026-10-30T11:23:56.551Z"
+}
