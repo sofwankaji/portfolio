@@ -14,11 +14,11 @@ The launcher reuses running services. Startup logs are stored in `.history/studi
 
 ## Write and publish
 
-1. Add a project. Enter its title, choose a cover and write a long document. Type `/` on an empty line to insert an image, gallery, image-and-text layout, quote or divider at the caret.
-2. Captions edit directly beneath images. Images accept JPG, PNG or WebP, up to 10 MB each and 16 per upload. They are decoded, oriented, resized and stored as WebP. Paste or drop images into the document.
-3. Draft edits are saved automatically. Save or Ctrl+S writes the project file and updates the local website. Optional project information and the Draft/Published setting are in the additional-options tab.
-4. Use **โปรไฟล์และหน้าแรก** for a portrait, crop position and introduction.
-5. Open **เผยแพร่บน GitHub**. Review the destination and file changes, then click **Push ไป GitHub**. The current document and profile are saved first if they have changes.
+1. Add a project, enter its title and choose a cover. Write directly on the document. Use **+** or type `/` on an empty line to search for images, galleries, side-by-side layouts, video, tables, checklists, callouts or a story outline.
+2. Select text for quick formatting, or use the sticky toolbar for headings, emphasis, quotes, colors, highlights, fonts, sizes, alignment, lists and links. More options include code, superscript/subscript and find/replace. Table controls appear inside a table.
+3. Upload, paste or drop JPG, PNG or WebP images, up to 10 MB each and 16 per upload. Drag a bottom corner to resize an image; drag the divider to resize an image-and-text layout. Captions edit below each image. Media controls move, duplicate or remove a block. Images are decoded and stored as WebP.
+4. Draft edits save automatically. **บันทึก** or Ctrl+S saves the project file and updates the local website. **ดูหน้าเว็บ ↗** opens the current saved draft separately. Project visibility is next to the writing tabs; other metadata is under **ตัวเลือกเพิ่มเติม**. Edit the whole website under **หน้าเว็บไซต์**.
+5. Open **เผยแพร่** and click **Push ไป GitHub**. Current document, profile and other automatic drafts are saved before preparing the complete publication snapshot. Hidden work stays local.
 
 The backend validates content, builds the production export, fetches the remote, checks the branch, stages an exact allowlist, commits and pushes. It never force-pushes or merges over newer remote commits. The progress list distinguishes successful GitHub push from successful online deployment. Online success requires the exact commit's Pages workflow to succeed and the live `version.json` to match.
 

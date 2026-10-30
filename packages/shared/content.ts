@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import sanitizeHtml from 'sanitize-html';
+import {cleanRichText,renderRichText} from './rich-text.ts';
 import {siteHead,siteHeader,siteFooter,arrow,buttonContents} from './site-shell.ts';
 import {siteSettingsSchema} from './site-settings.ts';
 import {isVideoUrl,youtubeEmbedUrl} from './video.ts';
@@ -45,17 +45,17 @@ export function profileAssets(p:Profile){return [p.portrait?.src,p.aboutImage?.s
 export function renderPortrait(p:Profile){return `<figure class="profile-portrait portrait-${p.crop}">${p.portrait?`<img src="${esc(p.portrait.src)}" alt="${esc(p.portrait.alt||p.name)}" style="object-position:${p.focalX}% ${p.focalY}%" fetchpriority="high" width="640" height="800">`:`<div class="portrait-monogram" aria-label="${esc(p.name)}"><span>sk.</span><span>Analytics<br>&amp; perspective.</span></div>`}<figcaption>${esc(p.name)}<span>${esc(p.role)}</span></figcaption></figure>`;}
 export function projectCover(p:Project){const fallback=p.id==='pizza-sales'?'sales':p.id==='ufund-risk'?'risk':p.id==='attach-rate'?'connections':p.category==='automation'?'workflow':p.category==='analysis'?'connections':'risk';return p.cover?.src||'/covers/'+fallback+'.svg';}
 export function renderProjectCard(p:Project){return `<article class="project" data-category="${esc(p.category)}"><a class="project-link" href="/portfolio/${esc(p.slug)}/"><figure class="project-media ${p.cover?'real-cover':'illustrated-cover'}" style="--cover-tone:${p.coverTone}"><img src="${esc(projectCover(p))}" alt="${esc(p.cover?.alt||p.title)}" loading="lazy" width="900" height="650"></figure><div class="project-info"><h3>${esc(p.title)}</h3><span class="project-open" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 18 18 6M6 6h12v12"/></svg></span></div></a></article>`;}
-export const cleanHtml=(html:string)=>sanitizeHtml(html,{allowedTags:['p','h2','h3','strong','em','u','s','ul','ol','li','a','blockquote','pre','code','br','hr'],allowedAttributes:{a:['href','target','rel']},allowedSchemes:['https','http','mailto'],transformTags:{a:(_tag,attrs)=>({tagName:'a',attribs:{...attrs,target:'_blank',rel:'noopener noreferrer'}})}});
+export const cleanHtml=cleanRichText;
 export function cleanProject(raw:unknown):Project{const p=projectSchema.parse(raw);if(p.keepDraft)p.status='draft';p.blocks=p.blocks.map(b=>b.type==='text'||b.type==='split'?{...b,html:cleanHtml(b.html)}:b);return p;}
 export const esc=(text:unknown)=>String(text??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 export function referencedAssets(p:Project){return [p.cover?.src,...p.blocks.flatMap(b=>b.type==='image'?[b.image.src]:b.type==='gallery'?b.images.map(i=>i.src):b.type==='split'?[b.image.src]:[])].filter((x):x is string=>!!x);}
 export function renderBlock(b:Block):string{
  const figure=(a:Asset)=>`<figure><a href="${esc(a.src)}" target="_blank" rel="noopener"><img src="${esc(a.src)}" alt="${esc(a.alt)}" loading="lazy"></a>${a.caption?`<figcaption>${esc(a.caption)}</figcaption>`:''}</figure>`;
  switch(b.type){
-  case'text':return `<section class="story-text">${cleanHtml(b.html)}</section>`;
+  case'text':return `<section class="story-text">${renderRichText(b.html)}</section>`;
   case'image':return `<section class="story-image align-${b.align} ${b.width==='content'?'story-content-width':''}" style="width:${b.size}%">${figure(b.image)}</section>`;
   case'gallery':return `<section class="story-gallery columns-${b.columns}">${b.images.map(figure).join('')}</section>`;
-  case'split':return `<section class="story-split image-${b.side}" style="--image-share:${b.ratio}fr;--text-share:${100-b.ratio}fr">${figure(b.image)}<div class="story-text">${cleanHtml(b.html)}</div></section>`;
+  case'split':return `<section class="story-split image-${b.side}" style="--image-share:${b.ratio}fr;--text-share:${100-b.ratio}fr">${figure(b.image)}<div class="story-text">${renderRichText(b.html)}</div></section>`;
   case'video':{
    if(!b.url)return '';const embed=youtubeEmbedUrl(b.url),label=b.title||'Video';
    const player=embed?`<div class="video-frame"><iframe src="${embed}" title="${esc(label)}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`:/\.(mp4|webm)(?:$|[?#])/i.test(b.url)?`<video controls preload="metadata" src="${esc(b.url)}" aria-label="${esc(label)}"></video>`:'';
