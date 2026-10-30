@@ -16,3 +16,7 @@ test('new website content is escaped and hidden projects stay out of About and W
 test('all website portrait and feature images join the published asset set',()=>{
  const p=profileSchema.parse({portrait:{src:'/assets/avatar.webp'},aboutImage:{src:'/assets/about.webp'},featureImage:{src:'/assets/feature.webp'}});assert.deepEqual(profileAssets(p),['/assets/avatar.webp','/assets/about.webp','/assets/feature.webp']);
 });
+
+test('Studio stories load styles and scripts from their own origin while links open the public preview',()=>{
+ const html=renderProject(project(),[],true,profileSchema.parse({}));assert.match(html,/href="\/editorial.css"/);assert.match(html,/src="\/editorial.js"/);assert.match(html,/href="http:\/\/127.0.0.1:4173\/portfolio\/"/);assert.doesNotMatch(html,/(?:href|src)="http:\/\/127.0.0.1:4173\/editorial\.(?:css|js)"/);
+});
