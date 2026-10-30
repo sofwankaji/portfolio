@@ -5,11 +5,14 @@ import {randomBytes,randomUUID} from 'node:crypto';
 import Busboy from 'busboy';
 import sharp from 'sharp';
 import {z} from 'zod';
-import {ROOT,CONTENT,ASSETS,HISTORY,safeJoin,atomic,projects,saveProject,saveDraft,readDraft,trashProject,readProfile,saveProfile} from './store.ts';
+import {ROOT,CONTENT,ASSETS,HISTORY,safeJoin,atomic,projects,saveProject,saveDraft,readDraft,trashProject,readProfile,saveProfile,readProfileDraft,saveProfileDraft} from './store.ts';
 import {cleanProject,renderProject} from '../packages/shared/content.ts';
-import {OUT,buildStudio,buildPublic} from '../scripts/build.ts';
+import {OUT,PREVIEW_OUT,buildStudio,buildPublic} from '../scripts/build.ts';
+import {readPreviewSnapshot,previewLiveScript} from './preview-state.ts';
 import {publishStatus,publishJobStatus,startPublish} from './publish.service.ts';
 import {preparePortfolio,reorderProjects,listTrash,restoreTrash} from './portfolio.service.ts';
+let previewVersion='';
+async function ensurePreview(){const snapshot=await readPreviewSnapshot();if(snapshot.version!==previewVersion){const result=await buildPublic(true);previewVersion=result.version!;}return previewVersion;}
 const TOKEN=randomBytes(32).toString('hex');
 let work=Promise.resolve();
 const serial=<T>(fn:()=>Promise<T>)=>{const result=work.then(fn);work=result.then(()=>{},()=>{});return result;};
@@ -38,10 +41,11 @@ async function studioHandler(req:http.IncomingMessage,res:http.ServerResponse){
    if(req.method==='POST'&&parts[1]==='projects'&&parts[2]==='reorder'){const body=await json(req);return send(res,await serial(async()=>{const result=await reorderProjects(body);await buildPublic();return result;}));}
    if(req.method==='GET'&&parts[1]==='trash')return send(res,await listTrash());
    if(req.method==='POST'&&parts[1]==='trash'&&parts[2]==='restore'){const body=await json(req);return send(res,await serial(async()=>{const result=await restoreTrash(body);await buildPublic();return result;}));}
-   if(req.method==='GET'&&parts[1]==='bootstrap'){const collection=await projects(),drafts=(await Promise.all(collection.map(p=>readDraft(p.id)))).filter(d=>d&&collection.some(p=>p.id===d.id&&p.revision===d.revision));return send(res,{token:TOKEN,projects:collection,drafts,media:await media(),profile:await readProfile()});}
+   if(req.method==='GET'&&parts[1]==='bootstrap'){const collection=await projects(),drafts=(await Promise.all(collection.map(p=>readDraft(p.id)))).filter(d=>d&&collection.some(p=>p.id===d.id&&p.revision===d.revision));return send(res,{token:TOKEN,projects:collection,drafts,media:await media(),profile:await readProfileDraft()||await readProfile(),profileDraft:!!(await readProfileDraft())});}
    if(req.method==='GET'&&parts[1]==='publish'&&parts[2]==='status')return send(res,await publishStatus());
    if(req.method==='GET'&&parts[1]==='publish'&&parts[2]==='job')return send(res,await publishJobStatus());
-   if(req.method==='POST'&&parts[1]==='publish'&&parts.length===2)return send(res,await startPublish(await json(req),serial),202);
+   if(req.method==='POST'&&parts[1]==='publish'&&parts.length===2){const result=await startPublish(await json(req),serial);return send(res,result,'upToDate' in result?200:202);}
+   if(req.method==='PUT'&&parts[1]==='profile'&&parts[2]==='draft'){const raw=await json(req);return send(res,await serial(()=>saveProfileDraft(raw)));}
    if(req.method==='GET'&&parts[1]==='profile')return send(res,await readProfile());
    if(req.method==='PUT'&&parts[1]==='profile'){const raw=await json(req);return send(res,await serial(async()=>{const p=await saveProfile(raw);await buildPublic();return p;}));}
    if(req.method==='GET'&&parts[1]==='drafts'&&parts[2])return send(res,await readDraft(idSchema.parse(parts[2])));
@@ -54,14 +58,28 @@ async function studioHandler(req:http.IncomingMessage,res:http.ServerResponse){
    return send(res,{error:'Not found'},404);
   }
   if(!['GET','HEAD'].includes(req.method||''))return send(res,{error:'Method not allowed'},405);
-  if(parts[0]==='preview'&&parts[1]){const id=idSchema.parse(parts[1]),all=await projects(),p=(await readDraft(id))||all.find(p=>p.id===id);if(!p)return send(res,{error:'Not found'},404);res.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});return res.end(renderProject(p,all,true));}
+  if(parts[0]==='preview'&&parts[1]){const id=idSchema.parse(parts[1]),all=(await readPreviewSnapshot()).projects,p=all.find(p=>p.id===id);if(!p)return send(res,{error:'Not found'},404);res.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});return res.end(renderProject(p,all,true));}
   if(parts[0]==='assets')return await file(res,ASSETS,decodeURIComponent(parts.slice(1).join('/')),req.method==='HEAD');
   if(parts[0]==='covers')return await file(res,path.join(ROOT,'apps/web/public'),decodeURIComponent(parts.join('/')),req.method==='HEAD');
   if(['/portfolio.css','/case-study.css'].includes(url.pathname))return await file(res,path.join(ROOT,'apps/web/public'),url.pathname.slice(1));
   return await file(res,path.join(ROOT,'apps/studio/dist'),parts.length?decodeURIComponent(parts.join('/')):'index.html',req.method==='HEAD');
  }catch(e:any){if(!res.headersSent)send(res,{error:e instanceof z.ZodError?e.issues.map((x:any)=>x.message).join('; '):e.message||'Unable to complete request'},e.status||400);else res.end();}
 }
-async function publicHandler(req:http.IncomingMessage,res:http.ServerResponse){try{if(!['127.0.0.1:4173','localhost:4173'].includes(req.headers.host||''))return send(res,{error:'Invalid host'},403);if(!['GET','HEAD'].includes(req.method||''))return send(res,{error:'Read-only website'},405);const url=new URL(req.url||'/','http://127.0.0.1:4173');if(url.pathname==='/studio.html'){res.writeHead(302,{location:'http://127.0.0.1:3001/'});return res.end();}await file(res,OUT,decodeURIComponent(url.pathname).replace(/^\//,''),req.method==='HEAD');}catch{if(!res.headersSent){res.writeHead(404);res.end('Not found');}}}
-await buildStudio();await fs.copyFile(path.join(ROOT,'apps/studio/client/index.html'),path.join(ROOT,'apps/studio/dist/index.html'));await fs.copyFile(path.join(ROOT,'apps/studio/client/studio.css'),path.join(ROOT,'apps/studio/dist/studio.css'));await buildPublic();
+async function publicHandler(req:http.IncomingMessage,res:http.ServerResponse){
+ try{
+  if(!['127.0.0.1:4173','localhost:4173'].includes(req.headers.host||''))return send(res,{error:'Invalid host'},403);
+  if(!['GET','HEAD'].includes(req.method||''))return send(res,{error:'Read-only website'},405);
+  const url=new URL(req.url||'/','http://127.0.0.1:4173');
+  if(url.pathname==='/__studio/version')return send(res,{version:(await readPreviewSnapshot()).version});
+  if(url.pathname==='/__studio/live.js'){res.writeHead(200,{'content-type':'application/javascript','cache-control':'no-store'});return res.end(previewLiveScript);}
+  if(url.pathname==='/studio.html'){res.writeHead(302,{location:'http://127.0.0.1:3001/'});return res.end();}
+  if(url.pathname.endsWith('/')||url.pathname.endsWith('.html'))await serial(ensurePreview);
+  const relative=decodeURIComponent(url.pathname).replace(/^\//,'');
+  if(url.pathname.startsWith('/portfolio/')&&url.pathname.endsWith('/')){try{await fs.access(safeJoin(PREVIEW_OUT,relative+'index.html'));}catch(e:any){if(e.code!=='ENOENT')throw e;res.writeHead(302,{location:'/portfolio/','cache-control':'no-store'});return res.end();}}
+  await file(res,PREVIEW_OUT,relative,req.method==='HEAD');
+ }catch(e:any){if(!res.headersSent)send(res,{error:e.message||'Preview unavailable'},400);}
+}
+
+await buildStudio();await fs.copyFile(path.join(ROOT,'apps/studio/client/index.html'),path.join(ROOT,'apps/studio/dist/index.html'));await fs.copyFile(path.join(ROOT,'apps/studio/client/studio.css'),path.join(ROOT,'apps/studio/dist/studio.css'));await buildPublic();await ensurePreview();
 if(!process.argv.includes('--web-only'))http.createServer(studioHandler).listen(3001,'127.0.0.1',()=>console.log('Studio: http://127.0.0.1:3001/'));
 if(!process.argv.includes('--studio-only'))http.createServer(publicHandler).listen(4173,'127.0.0.1',()=>console.log('Portfolio: http://127.0.0.1:4173/'));

@@ -80,3 +80,19 @@
 @media(prefers-reduced-motion:reduce){.studio-card-actions[popover]:popover-open{animation:none}.project-drag-ghost{transform:none}}
 
 .project-drag-surface{position:fixed;inset:0;z-index:900;background:transparent;cursor:grabbing}
+
+.publish-view{max-width:none;padding:56px 28px}
+.publish-simple{width:min(100%,530px);margin:0 auto;padding:40px;background:#fff;border:1px solid #e0e7ec;border-radius:20px;text-align:center}
+.publish-symbol{display:grid;place-items:center;width:50px;height:50px;margin:0 auto 21px;border-radius:15px;background:#edf3f7;color:#52748d}.publish-symbol svg{width:25px;height:25px}
+.publish-simple h2{font-size:24px;font-weight:500;letter-spacing:-.4px;margin:0 0 9px}
+.publish-simple .publish-result{font-size:13px;font-weight:400;line-height:1.7;color:#71818e;margin-bottom:26px}
+.publish-simple .publish-push{display:flex;justify-content:center;align-items:center;gap:11px;width:100%;min-height:53px;font-size:16px;letter-spacing:0;border-radius:11px}
+.publish-push[data-busy=true]::before{content:'';width:13px;height:13px;border:1.5px solid #ffffff60;border-top-color:#fff;border-radius:50%;animation:publish-spin .8s linear infinite}
+.publish-shortcuts{display:flex;justify-content:center;gap:28px;margin-top:21px;font-size:12px;color:#697f8e}.publish-shortcuts a:hover{text-decoration:underline;text-underline-offset:4px}
+.publish-simple .publish-error{font-size:12px;margin-top:20px;padding:10px;border-radius:8px}
+.publish-details{margin-top:31px;border-top:1px solid #edf1f4;padding-top:18px;text-align:left;font-size:12px;color:#6c7e8c}
+.publish-details>summary{width:max-content;margin:auto;cursor:pointer;font-size:12px;color:#718390;list-style:none}.publish-details>summary::after{content:'⌄';margin-left:8px}.publish-details[open]>summary::after{content:'⌃'}
+.publish-details-body{padding-top:22px;display:grid;gap:17px}.publish-details .publish-destination{display:flex;align-items:center;justify-content:space-between;margin:0;padding:0;border:0;background:none}.publish-details label{font-size:12px}.publish-details h4{font-size:12px;font-weight:500}.publish-details .publish-files{margin:0}.publish-details #publish-details-error{color:#92514d;overflow-wrap:anywhere}.publish-details #publish-steps{font-size:12px}
+@keyframes publish-spin{to{transform:rotate(360deg)}}
+@media(max-width:700px){.publish-view{padding:26px 17px}.publish-simple{padding:30px 23px}.publish-simple h2{font-size:22px}}
+@media(prefers-reduced-motion:reduce){.publish-push[data-busy=true]::before{animation:none}}

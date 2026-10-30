@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {z} from 'zod';
-import {HISTORY,projects,saveProject,readDraft,saveDraft,safeJoin} from './store.ts';
+import {HISTORY,projects,saveProject,readDraft,saveDraft,safeJoin,readProfileDraft,saveProfile,readProfile} from './store.ts';
 import {cleanProject} from '../packages/shared/content.ts';
 import {hasProjectTitle,mergePortfolioDraft,sameProjectContent} from '../packages/shared/portfolio.ts';
 
@@ -18,13 +18,13 @@ export async function pendingPortfolioChanges(){
 
 export async function preparePortfolio(){
  // Validate every document before writing the first one.
- const collection=await projects();
+ const collection=await projects(),profile=await readProfileDraft();
  const ready=await Promise.all(collection.map(async saved=>({saved,next:mergePortfolioDraft(saved,await readDraft(saved.id))})));
- let applied=0;
+ let applied=0;if(profile){await saveProfile(profile);applied++;}
  for(const {saved,next} of ready){
   if(!sameProjectContent(saved,next)){await saveProject(next);applied++;}
  }
- return {projects:await projects(),applied};
+ return {projects:await projects(),profile:await readProfile(),applied};
 }
 
 const reorderSchema=z.object({projects:z.array(z.object({id:z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/),revision:z.number().int().nonnegative()})).max(1000)});

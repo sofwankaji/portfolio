@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash,randomUUID} from 'node:crypto';
 import {z} from 'zod';
-import {ROOT,HISTORY,atomic,safeJoin,projects,readProfile} from './store.ts';
+import {ROOT,HISTORY,atomic,safeJoin,projects,readProfile,readProfileDraft} from './store.ts';
 import {referencedAssets} from '../packages/shared/content.ts';
 import {readPublishConfig,type PublishConfig} from './publish-config.ts';
 import {git,gh,redact,verifyRepository,divergence,refreshRemote,checkSecret} from './git.service.ts';
@@ -39,13 +39,13 @@ async function load(){if(loaded)return;loaded=true;try{latest=JSON.parse(await f
 async function persist(){if(latest)await atomic(jobFile,JSON.stringify(latest,null,2));}
 async function step(job:Job,key:string){job.stage=key;job.updatedAt=new Date().toISOString();const i=job.steps.findIndex(s=>s.key===key);job.steps.forEach((s,index)=>s.status=index<i?'done':index===i?'running':'pending');await persist();}
 async function fail(job:Job,error:unknown){job.status='failed';job.error=redact(error instanceof Error?error.message:String(error));job.updatedAt=new Date().toISOString();const current=job.steps.find(s=>s.key===job.stage);if(current)current.status='failed';busy=false;await persist();}
-export async function publishStatus(){await load();const config=await readPublishConfig();try{const repo=await verifyRepository(config),plan=await makePublishPlan(),counts=await divergence(config),blocked=await systemChanges(),drafts=(await projects()).filter(p=>p.status==='draft').map(p=>({id:p.id,title:p.title,cover:p.cover,updatedAt:p.updatedAt,keepDraft:p.keepDraft}));return {config,repository:repo,...counts,plan:{changes:plan.changes,fingerprint:plan.fingerprint,publishedProjects:plan.publishedProjects},drafts,pending:await pendingPortfolioChanges(),blocked,busy,job:latest};}catch(e:any){return {config,busy,job:latest,error:redact(e.message)};}}
+export async function publishStatus(){await load();const config=await readPublishConfig();try{const repo=await verifyRepository(config),plan=await makePublishPlan(),counts=await divergence(config),blocked=await systemChanges(),drafts=(await projects()).filter(p=>p.status==='draft').map(p=>({id:p.id,title:p.title,cover:p.cover,updatedAt:p.updatedAt,keepDraft:p.keepDraft}));return {config,repository:repo,...counts,plan:{changes:plan.changes,fingerprint:plan.fingerprint,publishedProjects:plan.publishedProjects},drafts,pending:await pendingPortfolioChanges(),profilePending:!!(await readProfileDraft()),blocked,busy,job:latest};}catch(e:any){return {config,busy,job:latest,error:redact(e.message)};}}
 export async function publishJobStatus(){await load();return {busy,job:latest};}
 export const publishRequestSchema=z.object({message:z.string().trim().min(1).max(200).refine(x=>!/[\r\n\x00-\x1f]/.test(x)),expectedHead:z.string().regex(/^[a-f0-9]{40}$/),fingerprint:z.string().regex(/^[a-f0-9]{64}$/)});
 export async function startPublish(raw:unknown,serial:<T>(fn:()=>Promise<T>)=>Promise<T>){
  await load();if(busy)throw Object.assign(new Error('A publish is already in progress'),{status:409});const request=publishRequestSchema.parse(raw);
  busy=true;
- try{const config=await readPublishConfig(),plan=await makePublishPlan(),counts=await divergence(config);if(!plan.changes.length&&!counts.ahead)throw Object.assign(new Error('ไม่มีการเปลี่ยนแปลงใหม่ เว็บไซต์ใช้ข้อมูลล่าสุดแล้ว'),{status:409});}catch(e){busy=false;throw e;}
+ try{const config=await readPublishConfig(),plan=await makePublishPlan(),counts=await divergence(config);if(!plan.changes.length&&!counts.ahead){const repo=await verifyRepository(config);if(repo.head!==request.expectedHead||plan.fingerprint!==request.fingerprint)throw Object.assign(new Error('ข้อมูลเปลี่ยนแล้ว กรุณาลองอีกครั้ง'),{status:409});const refreshed=await refreshRemote(config);if(!refreshed.ahead){busy=false;return {upToDate:true,commit:repo.head,siteUrl:config.siteUrl};}}}catch(e){busy=false;throw e;}
  const job:Job={id:randomUUID(),status:'running',stage:'validate',steps:stageLabels.map(([key,label])=>({key,label,status:'pending'})),message:request.message,startedAt:new Date().toISOString(),updatedAt:new Date().toISOString()};busy=true;latest=job;await persist();
  void serial(()=>performPublish(job,request)).catch(e=>fail(job,e));return job;
 }
