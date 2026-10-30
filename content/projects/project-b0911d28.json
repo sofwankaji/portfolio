@@ -1,0 +1,37 @@
+{
+  "id": "project-b0911d28",
+  "slug": "project-b0911d28",
+  "title": "Test1",
+  "headline": "Test1",
+  "summary": "",
+  "category": "dashboard",
+  "context": "",
+  "role": "",
+  "tools": "",
+  "repo": "",
+  "demo": "",
+  "status": "published",
+  "cover": null,
+  "coverStyle": "",
+  "coverNote": "",
+  "blocks": [
+    {
+      "id": "e99f0b12-e873-4058-af03-dbd671744120",
+      "type": "image",
+      "image": {
+        "src": "/assets/road-accident-dashboard.png",
+        "alt": "UK road accident dashboard",
+        "caption": ""
+      },
+      "width": "wide"
+    },
+    {
+      "id": "67fc37da-c4c9-4956-af2a-344fb60f8c6c",
+      "type": "text",
+      "html": "<ul><li><p>Test1</p></li><li><p>Test2</p></li></ul><p></p><p></p>"
+    }
+  ],
+  "order": 8,
+  "revision": 3,
+  "updatedAt": "2026-10-30T08:11:27.635Z"
+}
