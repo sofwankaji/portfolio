@@ -8,6 +8,7 @@ const initialHash=location.hash.slice(1);
 const initialView=['publish','profile','projects','media'].includes(initialHash)?initialHash:initialHash?'editor':'projects';
 let profile=null,profileDirty=false,currentView='editor',insertIndex=null,writer=null,savedEditVersion=0,publishData=null,publishPoll=null,pushRequest=false;
 let token='',all=[],media=[],project=null,activeEditor=null,undo=[],redo=[],editVersion=0,draftVersion=-1,draftTimer=null,draftWork=Promise.resolve(),saving=false,picker={multiple:false,selected:new Set(),callback:null},uploadContext='picker',toastTimer;
+let publishStatusSequence=0;
 let profileDraftTimer=null,profileDraftWork=Promise.resolve(),profileDraftFingerprint='';
 const workingCopies=new Map();let draggingProject=null,collectionBusy=false,gridInteraction=null;const projectMenus=[];
 const labels={text:'ข้อความ',image:'รูปภาพ',gallery:'แกลเลอรี',split:'รูป + ข้อความ',video:'วิดีโอ',quote:'คำพูด',divider:'เส้นคั่น'};
@@ -44,12 +45,12 @@ async function uploadFiles(files){if(files.length>16)throw new Error('เลื�
 function setPushBusy(busy){const button=$('#push-button');button.disabled=false;button.setAttribute('aria-busy',String(busy));button.dataset.busy=String(busy);}
 function hasPortfolioChanges(data){return !!(data?.plan?.changes.length||data?.ahead||data?.pending?.length||data?.profilePending||profileDirty||(project&&editVersion!==savedEditVersion));}
 async function loadPublishView(){
- const data=publishData=await api('/publish/status');$('#publish-repository').textContent=data.config.repository;$('#publish-repository').href='https://github.com/'+data.config.repository;$('#publish-branch').textContent=data.config.branch;$('#publish-site').href=data.config.siteUrl;
+ const sequence=++publishStatusSequence,data=await api('/publish/status');if(sequence!==publishStatusSequence)return data;publishData=data;$('#publish-repository').textContent=data.config.repository;$('#publish-repository').href='https://github.com/'+data.config.repository;$('#publish-branch').textContent=data.config.branch;$('#publish-site').href=data.config.siteUrl;
  const conflict=data.pending?.find(p=>p.conflict),error=data.error||(data.blocked?.length?'มีไฟล์ระบบที่ยังไม่ได้บันทึกเป็นเวอร์ชัน: '+data.blocked.join(', '):data.behind?'GitHub มีเวอร์ชันใหม่กว่า ต้องซิงก์ก่อนส่ง':conflict?'มีร่างเก่าของ '+conflict.title+' กรุณาเปิดและบันทึกก่อน Push':'');$('#publish-error').hidden=!error;$('#publish-error').textContent=error?'ยังส่งไม่ได้ · ดูรายละเอียด':'';$('#publish-details-error').hidden=!error;$('#publish-details-error').textContent=error;
  const noChanges=!hasPortfolioChanges(data);$('#publish-change-summary').textContent=data.plan?(noChanges?'เว็บไซต์ใช้ข้อมูลล่าสุดแล้ว':data.plan.publishedProjects+' ผลงาน · '+data.plan.changes.length+' ไฟล์เปลี่ยน'+(data.pending?.length?' · '+data.pending.length+' งานที่เก็บอัตโนมัติ':'')+(data.ahead?' · '+data.ahead+' เวอร์ชันรอ Push':'')):'ยังอ่านสถานะไม่ได้';$('#publish-empty-hint').hidden=!noChanges;$('#publish-empty-hint').textContent='ไม่มีการเปลี่ยนแปลงใหม่ที่จะส่ง';
  const files=$('#publish-file-list');files.replaceChildren();data.plan?.changes.forEach(change=>files.append(el('li',change.status+' · '+change.path)));data.pending?.forEach(p=>files.append(el('li','รวมการแก้ไขอัตโนมัติ · '+p.title)));
  const localDrafts=(data.drafts||[]).filter(p=>p.keepDraft||p.title==='Untitled project');const drafts=$('#publish-draft-list');drafts.replaceChildren();$('#publish-drafts').hidden=!localDrafts.length;$('#publish-draft-count').textContent=localDrafts.length+' งานเก็บไว้ในเครื่อง';localDrafts.forEach(p=>{const row=el('div',undefined,'publish-draft-row'),copy=el('div');copy.append(el('strong',p.title),el('span',p.title==='Untitled project'?'เพิ่มชื่อก่อนนำขึ้นเว็บ':'เลือกเก็บเฉพาะในเครื่อง'));row.append(copy);if(p.title!=='Untitled project'){const use=button('นำขึ้นเว็บ',()=>prepareProjectForPublish(p.id));row.append(use);}drafts.append(row);});
- setPushBusy(!!data.busy||pushRequest);if(!pushRequest){renderPublishJob(data.job,data.busy);if(!data.busy){$('#publish-result').textContent=error?'ยังส่งไม่ได้':noChanges?'GitHub เป็นเวอร์ชันล่าสุดแล้ว':'พร้อมส่งขึ้นเว็บ';}}if(data.busy)pollPublish();
+ setPushBusy(!!data.busy||pushRequest);if(!pushRequest){renderPublishJob(data.job,data.busy);if(!data.busy){$('#publish-result').textContent=error?'ยังส่งไม่ได้':noChanges?'GitHub เป็นเวอร์ชันล่าสุดแล้ว':'พร้อมส่งขึ้นเว็บ';}}if(data.busy)pollPublish();return data;
 }
 
 function renderPublishJob(job,busy){if(!job)return;const names={running:'กำลังส่ง…',deploying:'กำลังขึ้นเว็บ…',deployed:'ออนไลน์แล้ว',pushed_unverified:'Push ถึง GitHub แล้ว · ยังยืนยันเว็บออนไลน์ไม่ได้',failed:job.pushed?'Push ถึง GitHub แล้ว แต่การขึ้นเว็บยังไม่สำเร็จ':'เผยแพร่ไม่สำเร็จ'};const previous=!busy&&job.status==='deployed';$('#publish-result').textContent=(names[job.status]||job.status);$('#publish-job-date').textContent=job.updatedAt?'อัปเดต '+new Date(job.updatedAt).toLocaleString('th-TH'):'';$('#publish-result').dataset.state=job.status;const list=$('#publish-steps');list.replaceChildren();job.steps.forEach(step=>{const item=el('li'),mark=el('span',step.status==='done'?'✓':step.status==='failed'?'!':'', 'step-mark');item.dataset.state=step.status;item.append(mark,el('span',step.label));list.append(item);});const commit=$('#publish-commit');commit.hidden=!job.commitUrl;if(job.commitUrl){commit.href=job.commitUrl;commit.textContent='ดูเวอร์ชัน '+job.commit.slice(0,7)+' บน GitHub';}$('#publish-run').hidden=!job.runUrl;if(job.runUrl)$('#publish-run').href=job.runUrl;$('#publish-live').hidden=job.status!=='deployed';if(job.siteUrl)$('#publish-live').href=job.siteUrl;$('#publish-job-error').hidden=!job.error;$('#publish-job-error').textContent=job.error||'';setPushBusy(!!busy||pushRequest);}
@@ -59,14 +60,14 @@ async function pushFromStudio(){
  try{
   await persistDraft();await draftWork;
   if(profileDirty){await persistProfileDraft();await saveProfile();if(profileDirty)throw new Error('กรุณาบันทึกโปรไฟล์ให้สำเร็จก่อน');}
-  await loadPublishView();
-  if(publishData.busy){renderPublishJob(publishData.job,true);pollPublish();return;}
-  if(publishData.error||publishData.blocked?.length||publishData.behind||publishData.pending?.some(p=>p.conflict))throw new Error('ยังเผยแพร่ไม่ได้ กรุณาตรวจสถานะที่แสดง');
+  const before=await loadPublishView();
+  if(before.busy){renderPublishJob(before.job,true);pollPublish();return;}
+  if(before.error||before.blocked?.length||before.behind||before.pending?.some(p=>p.conflict))throw new Error('ยังเผยแพร่ไม่ได้ กรุณาตรวจสถานะที่แสดง');
   const prepared=await api('/publish/prepare',{method:'POST',body:'{}'});all=prepared.projects;workingCopies.clear();if(prepared.profile&&!profileDirty){profile=prepared.profile;profileDraftFingerprint=JSON.stringify(profile);renderProfile();}
   if(project){const saved=all.find(p=>p.id===project.id);project=saved?clone(saved):null;editVersion=draftVersion=savedEditVersion=0;}
-  await loadPublishView();
+  const ready=await loadPublishView();
   $('#publish-result').textContent='กำลังส่งการเปลี่ยนแปลงทั้งพอร์ต…';
-  const job=await api('/publish',{method:'POST',body:JSON.stringify({message:$('#publish-message').value.trim()||'Update portfolio from Studio',expectedHead:publishData.repository.head,fingerprint:publishData.plan.fingerprint})});if(job.upToDate){$('#publish-result').textContent='GitHub เป็นเวอร์ชันล่าสุดแล้ว';return;}publishData.busy=true;renderPublishJob(job,true);pollPublish();
+  const job=await api('/publish',{method:'POST',body:JSON.stringify({message:$('#publish-message').value.trim()||'Update portfolio from Studio',expectedHead:ready.repository.head,fingerprint:ready.plan.fingerprint})});publishStatusSequence++;publishData=ready;if(job.upToDate){$('#publish-result').textContent='GitHub เป็นเวอร์ชันล่าสุดแล้ว';return;}publishData.busy=true;renderPublishJob(job,true);pollPublish();
  }catch(e){$('#publish-result').textContent='ส่งไม่สำเร็จ';$('#publish-error').hidden=false;$('#publish-error').textContent='ดูรายละเอียด';$('#publish-details-error').hidden=false;$('#publish-details-error').textContent=e.message;}finally{pushRequest=false;setPushBusy(!!publishData?.busy);}
 }
 
