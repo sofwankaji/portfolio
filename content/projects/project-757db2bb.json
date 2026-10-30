@@ -1,0 +1,27 @@
+{
+  "id": "project-757db2bb",
+  "slug": "project-757db2bb",
+  "title": "หหหห",
+  "headline": "หหหห",
+  "summary": "",
+  "category": "dashboard",
+  "context": "",
+  "role": "",
+  "tools": "",
+  "repo": "",
+  "demo": "",
+  "status": "published",
+  "cover": null,
+  "coverStyle": "",
+  "coverNote": "",
+  "blocks": [
+    {
+      "id": "39ffcb6c-37fd-4cdd-acc7-230ff0ed2742",
+      "type": "text",
+      "html": "<p></p>"
+    }
+  ],
+  "order": 10,
+  "revision": 2,
+  "updatedAt": "2026-10-30T09:15:59.414Z"
+}

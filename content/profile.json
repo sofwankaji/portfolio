@@ -3,13 +3,13 @@
   "role": "Analytics & business intelligence",
   "intro": "I build dashboards, analytical tools and reporting workflows that make complex information easier to understand.",
   "portrait": {
-    "src": "/assets/uploads/eb7449eb-fcfb-4256-8230-318091ae1965.webp",
+    "src": "/assets/uploads/65e73a1b-d941-4368-9869-2ae997c547ea.webp",
     "alt": "",
     "caption": ""
   },
-  "focalX": 37,
-  "focalY": 50,
+  "focalX": 36,
+  "focalY": 49,
   "crop": "portrait",
-  "revision": 4,
-  "updatedAt": "2026-10-30T09:01:32.456Z"
+  "revision": 5,
+  "updatedAt": "2026-10-30T09:16:38.533Z"
 }
