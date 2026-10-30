@@ -65,3 +65,5 @@ The editor binds to 127.0.0.1, checks host and origin, and protects mutation API
 The public site keeps the Porcelain design, English content and IBM Plex Sans. Studio uses Thai labels with Noto Sans Thai.
 
 Studio opens on the Projects tab with cover-image cards. Click a card to write its story, or use the + tile or Add project button to create a blank document. The back button returns to the gallery.
+
+New work starts as a local draft. Use **นำขึ้นเว็บ** on its compact card, or **เผยแพร่งานนี้** in the editor, to save it as ready for publication and open the publish center. The publish center lists excluded drafts explicitly. A push with no new ready content and no local commits is rejected without creating a new publish job; earlier deployment results are dated and labeled as previous results.
