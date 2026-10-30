@@ -1,0 +1,31 @@
+{
+  "id": "project-a13b4236",
+  "slug": "project-a13b4236",
+  "title": "NAGOYA",
+  "headline": "NAGOYA",
+  "summary": "",
+  "category": "dashboard",
+  "context": "",
+  "role": "",
+  "tools": "",
+  "repo": "",
+  "demo": "",
+  "status": "published",
+  "cover": {
+    "src": "/assets/uploads/dfb2c832-6110-444d-a961-7df5d9b85408.webp",
+    "alt": "",
+    "caption": ""
+  },
+  "coverStyle": "",
+  "coverNote": "",
+  "blocks": [
+    {
+      "id": "87a75d7c-1a74-47f6-9e2c-4acfa118bb30",
+      "type": "text",
+      "html": "<h2>Test1</h2><ul><li><p>1</p></li><li><p>2</p></li><li><p>3</p></li><li><p>4</p></li></ul><p></p><p></p>"
+    }
+  ],
+  "order": 7,
+  "revision": 3,
+  "updatedAt": "2026-10-30T07:13:32.851Z"
+}
