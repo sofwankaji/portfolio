@@ -12,3 +12,11 @@ export function youtubeEmbedUrl(value:string){
   return id&&/^[a-zA-Z0-9_-]{11}$/.test(id)?'https://www.youtube-nocookie.com/embed/'+id:null;
  }catch{return null;}
 }
+
+export function videoPlayerSource(value:string){
+ if(!isVideoUrl(value))return null;
+ const embed=youtubeEmbedUrl(value);
+ if(embed)return {kind:'youtube' as const,src:embed};
+ if(/\.(mp4|webm)$/i.test(new URL(value).pathname))return {kind:'file' as const,src:value};
+ return null;
+}

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {cleanProject,renderBlock} from '../packages/shared/content.ts';
 import {mergePortfolioDraft} from '../packages/shared/portfolio.ts';
-import {youtubeEmbedUrl} from '../packages/shared/video.ts';
+import {youtubeEmbedUrl,videoPlayerSource} from '../packages/shared/video.ts';
 import {diffPublishedSnapshot} from '../server/publish.service.ts';
 
 const sample=()=>cleanProject({id:'story',slug:'story',title:'A story',headline:'A story',summary:'',category:'dashboard',context:'',role:'',tools:'',status:'published',blocks:[],order:4,revision:2});
@@ -38,4 +38,10 @@ test('YouTube links embed only approved hosts and valid video IDs',()=>{
  const project=cleanProject({...sample(),blocks:[{id:'video',type:'video',url:'https://youtu.be/jfKfPfyJRdk',title:'Demo <clip>',caption:'A result'}]});
  const html=renderBlock(project.blocks[0]);assert.match(html,/<iframe src="https:\/\/www.youtube-nocookie.com\/embed\/jfKfPfyJRdk"/);assert.match(html,/Demo &lt;clip&gt;/);assert.match(html,/A result/);
  assert.throws(()=>cleanProject({...sample(),blocks:[{id:'video',type:'video',url:'javascript:alert(1)'}]}));
+});
+
+test('video previews accept only safe YouTube players or direct video files',()=>{
+ assert.deepEqual(videoPlayerSource('https://youtu.be/M7lc1UVf-VE?si=test'),{kind:'youtube',src:'https://www.youtube-nocookie.com/embed/M7lc1UVf-VE'});
+ const file='https://media.example.test/demo.MP4?token=example';assert.deepEqual(videoPlayerSource(file),{kind:'file',src:file});
+ for(const value of ['javascript:alert(1)','https://user:secret@youtube.com/watch?v=M7lc1UVf-VE','https://youtube.com.evil.test/watch?v=M7lc1UVf-VE','https://example.test/?name=demo.mp4','https://youtu.be/bad',''])assert.equal(videoPlayerSource(value),null);
 });
