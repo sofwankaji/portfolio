@@ -13,7 +13,7 @@
     "caption": ""
   },
   "featureImage": null,
-  "aboutFocalX": 50,
+  "aboutFocalX": 48,
   "aboutFocalY": 45,
   "website": {
     "heroTitle": "Helping ideas thrive\nthrough meaningful data.",
@@ -37,6 +37,9 @@
     "featureBody": "I enjoy the space between a business question and a clear answer. Working with SQL, Power BI, Python and Excel, I bring structure to the data and care to the way it is presented.",
     "featureNote": "Curiosity is part of the process.",
     "featureTag": "SQL · Power BI · Python",
+    "workHeadline": "Turning complex data\ninto clear perspectives.",
+    "workLayout": "list",
+    "showWorkIntro": false,
     "workTitle": "Selected work.",
     "workIntro": "A selection of dashboards, data stories and reporting workflows.",
     "footerTitle": "Let’s work\ntogether.",
@@ -73,6 +76,11 @@
       "font": "IBM Plex Sans"
     },
     "labels": {
+      "projectLabel": "Project",
+      "focusLabel": "Focus",
+      "yearLabel": "Year",
+      "listView": "List view",
+      "gridView": "Grid view",
       "contextLabel": "Context",
       "roleLabel": "My role",
       "toolsLabel": "Tools",
@@ -101,6 +109,6 @@
   "focalX": 36,
   "focalY": 49,
   "crop": "portrait",
-  "revision": 7,
-  "updatedAt": "2026-10-30T12:03:49.474Z"
+  "revision": 8,
+  "updatedAt": "2026-10-30T13:08:07.390Z"
 }
