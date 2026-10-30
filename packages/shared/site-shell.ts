@@ -1,0 +1,20 @@
+import type {Profile} from './content.ts';
+const e=(v:unknown)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
+export const arrow='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg>';
+export const globe='<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="32" cy="32" r="23"/><ellipse cx="32" cy="32" rx="10" ry="23"/><path d="M9 32h46M13 19c10 5 28 5 38 0M13 45c10-5 28-5 38 0"/></svg>';
+const lines=(s:string)=>e(s).replace(/\n/g,'<br>');
+export function siteHead(p:Profile,title:string,description:string){
+ const t=p.website.theme,bright=parseInt(t.accent.slice(1,3),16)*.299+parseInt(t.accent.slice(3,5),16)*.587+parseInt(t.accent.slice(5,7),16)*.114;
+ const font=t.font.replaceAll(' ','+');
+ return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="${e(description)}"><meta name="theme-color" content="${t.background}"><title>${e(title)} — ${e(p.name)}</title><link href="https://fonts.googleapis.com/css2?family=${font}:wght@300;400;450;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/editorial.css"><style>:root{--page:${t.background};--ink:${t.ink};--muted:${t.muted};--accent:${t.accent};--footer:${t.footer};--footer-ink:${t.footerInk};--surface:${t.surface};--line:${t.line};--accent-ink:${bright>165?'#1c1d20':'#ffffff'};--site-font:'${t.font}',sans-serif}</style></head><body><a class="skip-link" href="#main">Skip to content</a>`;
+}
+export function siteHeader(p:Profile,active='about'){
+ const l=p.website.labels,nav=[['work','/portfolio/',l.work],['about','/about/',l.about],['contact','/contact/',l.contact]];
+ const links=nav.map(([key,url,label])=>`<a href="${url}"${active===key?' aria-current="page"':''}>${e(label)}</a>`).join('');
+ return `<header class="site-header"><a class="site-brand" href="/"><span class="copyright">©</span> ${e(l.brand)} <span>${e(p.name)}</span></a><nav class="desktop-nav" aria-label="Main navigation">${links}</nav></header><button class="menu-toggle magnetic" aria-label="Open navigation" aria-expanded="false" aria-controls="site-menu"><span></span><span></span></button><dialog id="site-menu" class="site-menu"><button class="menu-close" data-close-menu aria-label="Close navigation"><span></span><span></span></button><div class="menu-content"><p>${e(l.about)}</p><nav aria-label="Expanded navigation">${links}</nav><div class="menu-socials">${p.website.socials.map(s=>`<a href="${e(s.url)}" target="_blank" rel="noopener">${e(s.label)}</a>`).join('')}</div></div></dialog>`;
+}
+export function siteFooter(p:Profile){
+ const w=p.website,l=w.labels,photo=p.portrait||p.aboutImage;
+ return `<footer class="contact-footer" id="contact"><div class="footer-inner"><div class="footer-title">${photo?`<img src="${e(photo.src)}" alt="" width="80" height="80" style="object-position:${p.focalX}% ${p.focalY}%" loading="lazy">`:''}<h2>${lines(w.footerTitle)}</h2><span class="footer-arrow">${arrow}</span></div><div class="footer-rule"><a class="circle-button magnetic" href="/contact/">${e(l.contactCta)}</a></div><div class="contact-pills"><a href="mailto:${e(w.email)}">${e(w.email)}</a>${w.phone?`<a href="tel:${e(w.phone.replace(/[^+\d]/g,''))}">${e(w.phone)}</a>`:''}</div></div><div class="footer-bottom"><div><span>${e(l.version)}</span><p>${e(w.edition)}</p></div><div><span>${e(l.localTime)}</span><p data-local-time data-timezone="${w.timezone}">—</p></div><div class="footer-socials"><span>${e(l.socials)}</span><div>${w.socials.map(s=>`<a href="${e(s.url)}" target="_blank" rel="noopener">${e(s.label)}</a>`).join('')}</div></div></div></footer><div class="work-cursor" aria-hidden="true">${e(l.view)}</div><script src="/editorial.js" defer></script></body></html>`;
+}
+export const lineBreaks=lines;

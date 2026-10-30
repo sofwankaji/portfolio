@@ -1,3 +1,4 @@
+import {mountSiteSettings} from './site-settings.js';
 import {mountWriter} from './notion-writer.js';
 import {attachProjectMenu,mountProjectGrid} from './project-grid.js';
 const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
@@ -11,6 +12,7 @@ let token='',all=[],media=[],project=null,activeEditor=null,undo=[],redo=[],edit
 let publishStatusSequence=0;
 let profileDraftTimer=null,profileDraftWork=Promise.resolve(),profileDraftFingerprint='';
 const workingCopies=new Map();let draggingProject=null,collectionBusy=false,gridInteraction=null;const projectMenus=[];
+const websiteSettings=mountSiteSettings({element:$('#website-settings'),getProfile:()=>profile,onChange:profileChanged,chooseMedia});
 const labels={text:'ข้อความ',image:'รูปภาพ',gallery:'แกลเลอรี',split:'รูป + ข้อความ',video:'วิดีโอ',quote:'คำพูด',divider:'เส้นคั่น'};
 function toast(text,error=false){$('#toast').textContent=text;$('#toast').style.background=error?'#803d3d':'';$('#toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').hidden=true,5500);}
 function status(text){$('#save-state').textContent=text;}
@@ -76,7 +78,7 @@ function switchView(view){
  for(const name of ['projects','editor','media','profile','publish'])$('#'+name+'-view').hidden=view!==name;
  $('.mobile-project').hidden=view!=='editor';$('[data-action="history"]').hidden=view!=='editor';
  $$('[data-view]').forEach(b=>b.setAttribute('aria-current',(b.dataset.view===view||(b.dataset.view==='projects'&&view==='editor'))?'page':'false'));
- $('#workspace-title').textContent={projects:'ผลงาน',editor:'เขียนผลงาน',media:'คลังรูปภาพ',profile:'โปรไฟล์และหน้าแรก',publish:'เผยแพร่'}[view];$('.breadcrumb').textContent='Sofwan / '+({projects:'Projects',editor:'Project story',profile:'Profile',publish:'Publish',media:'Media'}[view]);
+ $('#workspace-title').textContent={projects:'ผลงาน',editor:'เขียนผลงาน',media:'คลังรูปภาพ',profile:'หน้าเว็บไซต์',publish:'เผยแพร่'}[view];$('.breadcrumb').textContent='Sofwan / '+({projects:'Projects',editor:'Project story',profile:'Profile',publish:'Publish',media:'Media'}[view]);
  $$('.top-actions [data-action="undo"],.top-actions [data-action="preview"]').forEach(b=>b.hidden=view!=='editor');$('#save-button').hidden=!['editor','profile'].includes(view);$('.top-actions [data-view="publish"]').textContent='เผยแพร่';$('.top-actions [data-view="publish"]').hidden=view==='publish';$('#save-state').hidden=!['editor','profile'].includes(view);
  if(view==='projects'){history.replaceState(null,'','#projects');renderProjects();status('ลากเพื่อเรียง · กดการ์ดเพื่อแก้ไข');}
  if(view==='publish'){history.replaceState(null,'','#publish');draftWork.then(loadPublishView).catch(e=>toast(e.message,true));}
@@ -117,8 +119,8 @@ function renderProjects(){
  gridInteraction=mountProjectGrid(grid,{onReorder:persistProjectOrder,onDragState:id=>draggingProject=id});
 }
 
-function renderProfile(){if(!profile)return;$$('[data-profile]').forEach(n=>n.value=profile[n.dataset.profile]);$('#profile-alt').value=profile.portrait?.alt||'';previewProfile();}
-function previewProfile(){if(!profile)return;const image=$('#profile-preview-image'),preview=$('#profile-upload-preview');image.hidden=!profile.portrait;$('#profile-placeholder').hidden=!!profile.portrait;$('#profile-preview-frame').dataset.crop=profile.crop;const position=profile.focalX+'% '+profile.focalY+'%';image.style.objectPosition=position;preview.style.backgroundPosition=position;preview.classList.toggle('has-image',!!profile.portrait);preview.style.backgroundImage=profile.portrait?'url("'+profile.portrait.src+'")':'none';if(profile.portrait)image.src=profile.portrait.src;$('#profile-preview-role').textContent=profile.role;$('#profile-preview-intro').textContent='I’m '+profile.name.split(' ')[0]+'. '+profile.intro;$('#profile-preview-name').textContent=profile.name;}
+function renderProfile(){if(!profile)return;$$('[data-profile]').forEach(n=>n.value=profile[n.dataset.profile]);$('#profile-alt').value=profile.portrait?.alt||'';previewProfile();websiteSettings.render();}
+function previewProfile(){if(!profile)return;const image=$('#profile-preview-image'),preview=$('#profile-upload-preview');image.hidden=!profile.portrait;$('#profile-placeholder').hidden=!!profile.portrait;$('#profile-preview-frame').dataset.crop=profile.crop;const position=profile.focalX+'% '+profile.focalY+'%';image.style.objectPosition=position;preview.style.backgroundPosition=position;preview.classList.toggle('has-image',!!profile.portrait);preview.style.backgroundImage=profile.portrait?'url("'+profile.portrait.src+'")':'none';if(profile.portrait)image.src=profile.portrait.src;$('#profile-preview-role').textContent=profile.role;$('#profile-preview-intro').textContent=profile.intro;$('#profile-preview-title').textContent=profile.website.heroTitle;$('#profile-preview-name').textContent=profile.name;}
 function profileChanged(){profileDirty=true;clearTimeout(profileDraftTimer);profileDraftTimer=setTimeout(()=>persistProfileDraft().catch(e=>toast(e.message,true)),700);status('กำลังเก็บ…');previewProfile();}
 function setPortrait(asset){profile.portrait=asset?ref(asset):null;profile.focalX=50;profile.focalY=50;profileChanged();renderProfile();}
 async function persistProfileDraft(){clearTimeout(profileDraftTimer);if(!profileDirty||JSON.stringify(profile)===profileDraftFingerprint)return profileDraftWork;const copy=clone(profile),fingerprint=JSON.stringify(copy);profileDraftWork=profileDraftWork.catch(()=>{}).then(async()=>{await api('/profile/draft',{method:'PUT',body:JSON.stringify(copy)});profileDraftFingerprint=fingerprint;if(JSON.stringify(profile)===fingerprint)status('เก็บอัตโนมัติแล้ว');});return profileDraftWork;}

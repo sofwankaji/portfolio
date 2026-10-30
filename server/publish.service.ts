@@ -3,7 +3,7 @@ import path from 'node:path';
 import {createHash,randomUUID} from 'node:crypto';
 import {z} from 'zod';
 import {ROOT,HISTORY,atomic,safeJoin,projects,readProfile,readProfileDraft} from './store.ts';
-import {referencedAssets} from '../packages/shared/content.ts';
+import {referencedAssets,profileAssets} from '../packages/shared/content.ts';
 import {readPublishConfig,type PublishConfig} from './publish-config.ts';
 import {git,gh,redact,verifyRepository,divergence,refreshRemote,checkSecret} from './git.service.ts';
 import {exportPublic} from '../scripts/export-public.ts';
@@ -15,7 +15,7 @@ const blobHash=(bytes:Buffer)=>createHash('sha1').update(`blob ${bytes.length}\0
 export type PublishPlan={files:string[];remove:string[];changes:{path:string;status:string}[];hashes:Record<string,string>;fingerprint:string;publishedProjects:number};
 export async function makePublishPlan():Promise<PublishPlan>{
  const all=await projects(),published=all.filter(p=>p.status==='published'),profile=await readProfile();
- const files=new Set(['content/profile.json',...published.map(p=>'content/projects/'+p.id+'.json'),...published.flatMap(referencedAssets).map(src=>'content/'+src.slice(1)),...(profile.portrait?['content/'+profile.portrait.src.slice(1)]:[])]);
+ const files=new Set(['content/profile.json',...published.map(p=>'content/projects/'+p.id+'.json'),...published.flatMap(referencedAssets).map(src=>'content/'+src.slice(1)),...profileAssets(profile).map(src=>'content/'+src.slice(1))]);
  const hashes:Record<string,string>={};
  for(const name of files){if(!publicPath(name))throw new Error('Unapproved public content path');const file=safeJoin(ROOT,name),stat=await fs.lstat(file);if(!stat.isFile()||stat.isSymbolicLink())throw new Error(`Unsupported file: ${name}`);const bytes=await fs.readFile(file);checkSecret(bytes,name);hashes[name]=blobHash(bytes);}
  const tree=await git(['ls-tree','-r','--full-tree','HEAD','--','content/']);const tracked=new Map<string,string>();

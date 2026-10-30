@@ -1,0 +1,14 @@
+(()=>{
+ const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
+ const toggle=document.querySelector('.menu-toggle'),menu=document.querySelector('#site-menu');
+ const updateMenu=()=>toggle?.classList.toggle('visible',scrollY>180);
+ toggle?.addEventListener('click',()=>{if(menu.open){menu.close();toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-label','Open navigation');}else{menu.showModal();toggle.setAttribute('aria-expanded','true');toggle.setAttribute('aria-label','Close navigation');}});
+ menu?.querySelector('[data-close-menu]')?.addEventListener('click',()=>menu.close());
+ menu?.addEventListener('close',()=>{toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-label','Open navigation');toggle.focus();});
+ menu?.addEventListener('click',e=>{if(e.target===menu)menu.close();});
+ let frame=0;const update=()=>{frame=0;updateMenu();if(reduced)return;document.querySelectorAll('[data-parallax]').forEach(photo=>{const r=photo.getBoundingClientRect();if(r.bottom>0&&r.top<innerHeight)photo.style.setProperty('--parallax',Math.max(-35,Math.min(35,(innerHeight/2-r.top-r.height/2)*.06))+'px');});};
+ addEventListener('scroll',()=>{if(!frame)frame=requestAnimationFrame(update);},{passive:true});update();
+ if(!reduced&&matchMedia('(pointer:fine)').matches){document.querySelectorAll('.magnetic').forEach(button=>{button.addEventListener('pointermove',e=>{const r=button.getBoundingClientRect();button.style.transform=`translate(${(e.clientX-r.left-r.width/2)*.12}px,${(e.clientY-r.top-r.height/2)*.12}px)`;});button.addEventListener('pointerleave',()=>button.style.transform='');});const cursor=document.querySelector('.work-cursor');document.querySelectorAll('.project-link').forEach(link=>{link.addEventListener('pointerenter',()=>cursor?.classList.add('visible'));link.addEventListener('pointerleave',()=>cursor?.classList.remove('visible'));link.addEventListener('pointermove',e=>{if(cursor){cursor.style.left=e.clientX+'px';cursor.style.top=e.clientY+'px';}});});}
+ document.querySelectorAll('[data-filter]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-filter]').forEach(other=>other.setAttribute('aria-pressed',String(other===button)));let count=0;document.querySelectorAll('.project').forEach(card=>{card.hidden=button.dataset.filter!=='all'&&card.dataset.category!==button.dataset.filter;if(!card.hidden)count++;});const counter=document.querySelector('#work-count');if(counter)counter.textContent=String(count);}));
+ const clock=()=>document.querySelectorAll('[data-local-time]').forEach(node=>{node.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:node.dataset.timezone,hour:'2-digit',minute:'2-digit',hour12:false,timeZoneName:'short'}).format(new Date());});clock();setInterval(clock,30000);
+})();
