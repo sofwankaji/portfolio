@@ -51,6 +51,7 @@ async function studioHandler(req:http.IncomingMessage,res:http.ServerResponse){
   if(!['GET','HEAD'].includes(req.method||''))return send(res,{error:'Method not allowed'},405);
   if(parts[0]==='preview'&&parts[1]){const id=idSchema.parse(parts[1]),all=await projects(),p=(await readDraft(id))||all.find(p=>p.id===id);if(!p)return send(res,{error:'Not found'},404);res.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});return res.end(renderProject(p,all,true));}
   if(parts[0]==='assets')return await file(res,ASSETS,decodeURIComponent(parts.slice(1).join('/')),req.method==='HEAD');
+  if(parts[0]==='covers')return await file(res,path.join(ROOT,'apps/web/public'),decodeURIComponent(parts.join('/')),req.method==='HEAD');
   if(['/portfolio.css','/case-study.css'].includes(url.pathname))return await file(res,path.join(ROOT,'apps/web/public'),url.pathname.slice(1));
   return await file(res,path.join(ROOT,'apps/studio/dist'),parts.length?decodeURIComponent(parts.join('/')):'index.html',req.method==='HEAD');
  }catch(e:any){if(!res.headersSent)send(res,{error:e instanceof z.ZodError?e.issues.map((x:any)=>x.message).join('; '):e.message||'Unable to complete request'},e.status||400);else res.end();}
@@ -59,5 +60,3 @@ async function publicHandler(req:http.IncomingMessage,res:http.ServerResponse){t
 await buildStudio();await fs.copyFile(path.join(ROOT,'apps/studio/client/index.html'),path.join(ROOT,'apps/studio/dist/index.html'));await fs.copyFile(path.join(ROOT,'apps/studio/client/studio.css'),path.join(ROOT,'apps/studio/dist/studio.css'));await buildPublic();
 if(!process.argv.includes('--web-only'))http.createServer(studioHandler).listen(3001,'127.0.0.1',()=>console.log('Studio: http://127.0.0.1:3001/'));
 if(!process.argv.includes('--studio-only'))http.createServer(publicHandler).listen(4173,'127.0.0.1',()=>console.log('Portfolio: http://127.0.0.1:4173/'));
-
-

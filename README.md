@@ -63,3 +63,5 @@ Use History in Studio to restore previous project versions. Deleting a project k
 The editor binds to 127.0.0.1, checks host and origin, and protects mutation APIs with a per-session token. Content writes are atomic and revision-checked. Git commands use fixed executable argument arrays. Never expose the local Studio service publicly.
 
 The public site keeps the Porcelain design, English content and IBM Plex Sans. Studio uses Thai labels with Noto Sans Thai.
+
+Studio opens on the Projects tab with cover-image cards. Click a card to write its story, or use the + tile or Add project button to create a blank document. The back button returns to the gallery.
