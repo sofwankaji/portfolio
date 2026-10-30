@@ -13,5 +13,9 @@ test('live preview and the production website use separate output folders',async
  await buildPublic();
  const production=await fs.readFile(path.join(OUT,'index.html'),'utf8');
  assert.doesNotMatch(production,/__studio\/live.js/);
+ assert.match(production,/editorial\.css\?v=[a-f0-9]{12}/);
+ assert.match(production,/editorial\.js\?v=[a-f0-9]{12}/);
+ const localAsset=local.match(/editorial\.js\?v=([a-f0-9]{12})/)?.[1],productionAsset=production.match(/editorial\.js\?v=([a-f0-9]{12})/)?.[1];assert.equal(localAsset,productionAsset);
+ const bundle=await fs.readFile(path.join(OUT,'editorial.js'),'utf8');assert.doesNotMatch(bundle,/import .*motion-math/);
  assert.notEqual(OUT,PREVIEW_OUT);
 });

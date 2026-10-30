@@ -1,5 +1,7 @@
 import {createHash} from 'node:crypto';
-import {projects,readDraft,readProfile,readProfileDraft} from './store.ts';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {ROOT,projects,readDraft,readProfile,readProfileDraft} from './store.ts';
 import {mergePortfolioDraft} from '../packages/shared/portfolio.ts';
 
 export async function readPreviewSnapshot(){
@@ -9,7 +11,9 @@ export async function readPreviewSnapshot(){
   return mergePortfolioDraft(project,draft?.revision===project.revision?draft:null);
  }));
  const profile=await readProfileDraft()||await readProfile();
- const version=createHash('sha256').update(JSON.stringify({projects:collection,profile})).digest('hex');
+ const hash=createHash('sha256').update(JSON.stringify({projects:collection,profile}));
+ for(const name of ['editorial.css','editorial.js','motion-math.js'])hash.update(await fs.readFile(path.join(ROOT,'apps/web/public',name)));
+ const version=hash.digest('hex');
  return {projects:collection,profile,version};
 }
 

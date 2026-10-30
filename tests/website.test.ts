@@ -20,3 +20,7 @@ test('all website portrait and feature images join the published asset set',()=>
 test('Studio stories load styles and scripts from their own origin while links open the public preview',()=>{
  const html=renderProject(project(),[],true,profileSchema.parse({}));assert.match(html,/href="\/editorial.css"/);assert.match(html,/src="\/editorial.js"/);assert.match(html,/href="http:\/\/127.0.0.1:4173\/portfolio\/"/);assert.doesNotMatch(html,/(?:href|src)="http:\/\/127.0.0.1:4173\/editorial\.(?:css|js)"/);
 });
+
+test('Work starts with a table, offers matching image tiles and omits private work from both',()=>{
+ const p=profileSchema.parse({website:{workLayout:'grid',workHeadline:'Own work headline',labels:{projectLabel:'Client'}}}),visible=cleanProject({...project(),location:'Thailand',year:'2026',coverTone:'#ddeeff'}),hidden=cleanProject({...project(),id:'private',slug:'private',title:'Hidden item',status:'draft'});const html=renderWork(p,[visible,hidden]);assert.match(html,/data-work-layout="grid"/);assert.match(html,/data-work-view="list"/);assert.match(html,/data-work-view="grid"/);assert.match(html,/Own work headline/);assert.match(html,/Thailand/);assert.match(html,/2026/);assert.match(html,/data-preview-tone="#ddeeff"/);assert.doesNotMatch(html,/Hidden item/);assert.equal((html.match(/href="\/portfolio\/sample\/"/g)||[]).length,2);
+});
