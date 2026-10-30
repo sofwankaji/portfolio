@@ -7,7 +7,7 @@ export const DEPLOY=path.join(ROOT,'apps/web/deploy');
 export function deploymentHtml(html:string,base:string){
  // Local Studio links are intentionally absent from the online website.
  return html.replace(/<a\b[^>]*href="(?:\/studio\/|http:\/\/127\.0\.0\.1:3001\/)"[^>]*>[\s\S]*?<\/a>/g,'')
-  .replace(/\b(href|src)="\/(?!\/)([^"#]*)"/g,(_all,attr,relative)=>`${attr}="${base}/${relative}"`);
+  .replace(/\b(href|src)="\/(?!\/)([^"]*)"/g,(_all,attr,relative)=>`${attr}="${base}/${relative}"`);
 }
 export async function exportPublic(){
  const config=await readPublishConfig();await buildPublic();
