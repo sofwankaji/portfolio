@@ -24,3 +24,37 @@
 @media(max-width:700px){.projects-view{padding:24px 17px}.projects-view .section-heading h2{font-size:24px}.studio-project-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 12px}.studio-project-cover{aspect-ratio:1.6;padding:9px}.studio-card-open .studio-project-info{padding:10px 10px 0}.studio-project-info>strong{font-size:14px;min-height:42px}.studio-card-footer{padding:7px 9px 10px;gap:3px}.studio-card-footer>span{font-size:10px;padding:3px 5px}.studio-card-publish{font-size:11px;min-width:60px;padding:6px;min-height:38px}.studio-new-project{min-height:187px;padding:16px 8px}.studio-new-project small{font-size:10px}.editor-back{gap:6px}.editor-publication-state{font-size:10px}.publish-drafts{padding:13px}.publish-draft-row{gap:10px}}
 @media(pointer:coarse){.studio-card-publish,.publish-draft-row .button{min-height:44px;min-width:64px}}
 @media(prefers-reduced-motion:reduce){.studio-project-card{transition:none}}
+/* Compact collection. Document actions stay behind the ellipsis. */
+.studio-project-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:19px 17px;align-items:stretch}
+.studio-project-card{position:relative;overflow:visible;cursor:grab;border-radius:15px;transition:transform .18s,border-color .18s,opacity .18s}
+.studio-project-card:hover{transform:translateY(-2px)}
+.studio-card-open{height:100%;display:flex;flex-direction:column;border-radius:15px;overflow:hidden;background:#fff}
+.studio-project-cover{width:100%;aspect-ratio:1.55;padding:11px;border-radius:15px 15px 0 0}
+.studio-project-info{padding:13px 14px 16px;min-height:66px;width:100%;text-align:left}
+.studio-project-info strong{font-size:13px;line-height:1.5;min-height:0;font-weight:500}
+.studio-new-project{min-height:180px;gap:12px;border-radius:15px}
+.studio-new-project strong{font-size:13px}.studio-new-project .new-project-symbol{width:39px;height:39px;font-size:24px}
+.studio-card-menu{position:absolute;right:8px;top:8px;z-index:2}
+.studio-card-menu[open]{z-index:10}.studio-card-menu summary{list-style:none;display:grid;place-items:center;width:32px;height:32px;background:#ffffffeb;border:1px solid #dce4e9;border-radius:10px;font-size:22px;line-height:1;cursor:pointer;color:#354c5b}
+.studio-card-menu summary::-webkit-details-marker{display:none}.studio-card-menu summary:focus-visible{outline:2px solid #486b82;outline-offset:3px}
+.studio-card-actions{position:absolute;top:37px;right:0;min-width:172px;padding:6px;background:#fff;border:1px solid #dce4e9;box-shadow:0 9px 25px #26354014;border-radius:12px}
+.studio-card-actions button{display:block;width:100%;border:0;background:transparent;text-align:left;font-size:12px;padding:10px 12px;border-radius:7px;cursor:pointer;min-height:38px}
+.studio-card-actions button:hover,.studio-card-actions button:focus-visible{background:#edf3f7}.studio-card-actions button:disabled{opacity:.35;cursor:default}.studio-card-actions button:last-child{color:#954a4a}
+.studio-draft-dot{position:absolute;left:12px;top:12px;width:8px;height:8px;background:#c6a267;border:2px solid white;border-radius:50%;pointer-events:none}
+.studio-project-card.is-hidden .studio-project-cover img{opacity:.38;filter:grayscale(1)}.studio-project-card.is-hidden .studio-project-info{color:#76828c}
+.studio-project-card.is-dragging{opacity:.35}.studio-project-card.drop-target{outline:2px solid #7596ae;outline-offset:5px}.studio-project-grid.is-saving{opacity:.65;pointer-events:none}
+.project-shelf-actions{display:flex;gap:10px;align-items:center}.trash-list{padding:12px 24px 24px;max-height:65vh;overflow:auto}.trash-row{display:flex;align-items:center;justify-content:space-between;gap:25px;padding:15px 0;border-bottom:1px solid #edf1f4}.trash-row strong{font-size:14px}.trash-row small{display:block;color:#75838d;font-size:11px;margin-top:4px}
+.notion-layout-controls{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:12px;padding:9px 10px;background:#f5f8fa;border-radius:10px;font-size:11px}
+.notion-layout-controls button,.notion-inline-toolbar button{font:inherit;border:0;border-radius:6px;background:#fff;color:#496172;padding:6px 9px;cursor:pointer;min-height:32px}
+.notion-layout-controls button[aria-pressed=true]{background:#dfeaf2;color:#243e50}
+.notion-size-control{display:flex;align-items:center;gap:9px;font-size:11px;color:#586c7b;margin-right:auto}
+.notion-size-control input[type=range]{width:100px;min-width:0;padding:0;height:25px;accent-color:#597f98;cursor:ew-resize}
+.notion-size-control output{min-width:32px;font-variant-numeric:tabular-nums}
+.notion-sized-image{margin-inline:auto;min-width:0}.notion-sized-image[data-align=left]{margin-left:0}.notion-sized-image[data-align=right]{margin-right:0}
+.notion-split{gap:20px;align-items:start}.notion-split>*{min-width:0}.notion-split-text{border:1px solid #e0e8ed;border-radius:8px;overflow:hidden}.notion-split-text .tiptap{padding:12px;min-height:160px;outline:none}.notion-inline-toolbar{display:flex;gap:4px;background:#f5f8fa;padding:5px}.notion-inline-toolbar button{font-size:12px;min-width:30px}
+.notion-split-text .tiptap p:has(>br:only-child)::before{content:'เขียนคำอธิบาย…';color:#93a1ac;float:left;pointer-events:none}
+.notion-video-panel{display:grid;gap:12px;padding:22px;background:#f3f7fa;border:1px solid #dde7ee;border-radius:12px}.notion-video-panel label{font-size:12px;color:#536c7e}.notion-video-panel input{display:block;width:100%;margin-top:6px}.notion-video-panel p{font-size:11px;color:#748795}
+.layout-video i{width:0!important;height:0!important;background:transparent!important;border-top:15px solid transparent;border-bottom:15px solid transparent;border-left:24px solid #7b9aaf;border-radius:0!important}
+@media(max-width:700px){.studio-project-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:15px 12px}.studio-new-project{min-height:169px}.studio-project-info{padding:12px;min-height:65px}.project-shelf-actions{gap:4px}.project-shelf-actions .button{font-size:11px;padding:10px}.notion-split{grid-template-columns:1fr!important}.notion-split[data-side=right]>figure{order:0}.notion-sized-image{width:100%!important}.notion-size-control input[type=range]{width:90px}}
+@media(pointer:coarse){.studio-card-menu summary{width:40px;height:40px}.studio-card-actions button{min-height:44px}.notion-layout-controls button{min-height:40px}}
+@media(prefers-reduced-motion:reduce){.studio-project-card{transition:none}.studio-project-card:hover{transform:none}}

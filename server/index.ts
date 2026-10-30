@@ -9,6 +9,7 @@ import {ROOT,CONTENT,ASSETS,HISTORY,safeJoin,atomic,projects,saveProject,saveDra
 import {cleanProject,renderProject} from '../packages/shared/content.ts';
 import {OUT,buildStudio,buildPublic} from '../scripts/build.ts';
 import {publishStatus,publishJobStatus,startPublish} from './publish.service.ts';
+import {preparePortfolio,reorderProjects,listTrash,restoreTrash} from './portfolio.service.ts';
 const TOKEN=randomBytes(32).toString('hex');
 let work=Promise.resolve();
 const serial=<T>(fn:()=>Promise<T>)=>{const result=work.then(fn);work=result.then(()=>{},()=>{});return result;};
@@ -30,10 +31,14 @@ async function uploads(req:http.IncomingMessage){
 async function studioHandler(req:http.IncomingMessage,res:http.ServerResponse){
  try{
   trusted(req,3001);const url=new URL(req.url||'/','http://127.0.0.1:3001'),parts=url.pathname.split('/').filter(Boolean);
-  res.setHeader('x-frame-options','SAMEORIGIN');res.setHeader('content-security-policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' blob: data:; frame-src 'self' http://127.0.0.1:4173; connect-src 'self'; base-uri 'self'; frame-ancestors 'self'");
+  res.setHeader('x-frame-options','SAMEORIGIN');res.setHeader('content-security-policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' blob: data:; frame-src 'self' http://127.0.0.1:4173 https://www.youtube-nocookie.com; media-src 'self' https:; connect-src 'self'; base-uri 'self'; frame-ancestors 'self'");
   if(parts[0]==='api'){
    res.setHeader('cache-control','no-store');
-   if(req.method==='GET'&&parts[1]==='bootstrap')return send(res,{token:TOKEN,projects:await projects(),media:await media(),profile:await readProfile()});
+   if(req.method==='POST'&&parts[1]==='publish'&&parts[2]==='prepare'){if((await publishJobStatus()).busy)throw Object.assign(new Error('กำลังส่งข้อมูลอยู่ กรุณารอให้เสร็จก่อน'),{status:409});return send(res,await serial(async()=>{const result=await preparePortfolio();await buildPublic();return result;}));}
+   if(req.method==='POST'&&parts[1]==='projects'&&parts[2]==='reorder'){const body=await json(req);return send(res,await serial(async()=>{const result=await reorderProjects(body);await buildPublic();return result;}));}
+   if(req.method==='GET'&&parts[1]==='trash')return send(res,await listTrash());
+   if(req.method==='POST'&&parts[1]==='trash'&&parts[2]==='restore'){const body=await json(req);return send(res,await serial(async()=>{const result=await restoreTrash(body);await buildPublic();return result;}));}
+   if(req.method==='GET'&&parts[1]==='bootstrap'){const collection=await projects(),drafts=(await Promise.all(collection.map(p=>readDraft(p.id)))).filter(d=>d&&collection.some(p=>p.id===d.id&&p.revision===d.revision));return send(res,{token:TOKEN,projects:collection,drafts,media:await media(),profile:await readProfile()});}
    if(req.method==='GET'&&parts[1]==='publish'&&parts[2]==='status')return send(res,await publishStatus());
    if(req.method==='GET'&&parts[1]==='publish'&&parts[2]==='job')return send(res,await publishJobStatus());
    if(req.method==='POST'&&parts[1]==='publish'&&parts.length===2)return send(res,await startPublish(await json(req),serial),202);
@@ -43,7 +48,7 @@ async function studioHandler(req:http.IncomingMessage,res:http.ServerResponse){
    if(req.method==='PUT'&&parts[1]==='drafts'&&parts[2]){const raw=await json(req);if(raw.id!==idSchema.parse(parts[2]))throw new Error('Invalid project');return send(res,await serial(()=>saveDraft(raw)));}
    if(req.method==='PUT'&&parts[1]==='projects'&&parts[2]){const raw=await json(req);if(raw.id!==idSchema.parse(parts[2]))throw new Error('Invalid project');return send(res,await serial(async()=>{const p=await saveProject(raw);await buildPublic();return p;}));}
    if(req.method==='POST'&&parts[1]==='uploads')return send(res,await serial(()=>uploads(req)),201);
-   if(req.method==='POST'&&parts[1]==='projects'&&parts[3]==='trash'){const id=idSchema.parse(parts[2]);await serial(async()=>{await trashProject(id);await buildPublic();});return send(res,{ok:true});}
+   if(req.method==='POST'&&parts[1]==='projects'&&parts[3]==='trash'){const id=idSchema.parse(parts[2]),body=z.object({revision:z.number().int().nonnegative()}).parse(await json(req));await serial(async()=>{await trashProject(id,body.revision);await buildPublic();});return send(res,{ok:true});}
    if(req.method==='GET'&&parts[1]==='projects'&&parts[3]==='history'){const id=idSchema.parse(parts[2]);try{const files=(await fs.readdir(path.join(HISTORY,'projects',id))).filter(f=>/^\d+-\d+\.json$/.test(f)).sort().reverse();return send(res,files.slice(0,30));}catch{return send(res,[]);}}
    if(req.method==='POST'&&parts[1]==='projects'&&parts[3]==='restore'){const id=idSchema.parse(parts[2]),body=await json(req);if(!/^\d+-\d+\.json$/.test(body.file))throw new Error('Invalid version');return send(res,await serial(async()=>{const raw=JSON.parse(await fs.readFile(path.join(HISTORY,'projects',id,body.file),'utf8')),current=(await projects()).find(p=>p.id===id);raw.revision=current?.revision??0;const p=await saveProject(raw);await buildPublic();return p;}));}
    return send(res,{error:'Not found'},404);

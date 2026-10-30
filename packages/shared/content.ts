@@ -1,13 +1,15 @@
 import {z} from 'zod';
 import sanitizeHtml from 'sanitize-html';
+import {isVideoUrl,youtubeEmbedUrl} from './video.ts';
 
 export const assetPath=z.string().regex(/^\/assets\/(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_.-]+\.(?:png|jpg|jpeg|webp)$/);
 export const assetSchema=z.object({src:assetPath,alt:z.string().max(500).default(''),caption:z.string().max(1000).default('')});
 export const blockSchema=z.discriminatedUnion('type',[
  z.object({id:z.string().max(80),type:z.literal('text'),html:z.string().max(100000)}),
- z.object({id:z.string().max(80),type:z.literal('image'),image:assetSchema,width:z.enum(['wide','content']).default('wide')}),
+ z.object({id:z.string().max(80),type:z.literal('image'),image:assetSchema,width:z.enum(['wide','content']).default('wide'),size:z.number().min(25).max(100).default(100),align:z.enum(['left','center','right']).default('center')}),
  z.object({id:z.string().max(80),type:z.literal('gallery'),images:z.array(assetSchema).min(1).max(16),columns:z.union([z.literal(2),z.literal(3)]).default(2)}),
- z.object({id:z.string().max(80),type:z.literal('split'),image:assetSchema,html:z.string().max(100000),side:z.enum(['left','right']).default('left')}),
+ z.object({id:z.string().max(80),type:z.literal('split'),image:assetSchema,html:z.string().max(100000),side:z.enum(['left','right']).default('left'),ratio:z.number().min(25).max(75).default(50)}),
+ z.object({id:z.string().max(80),type:z.literal('video'),url:z.string().max(2000).refine(v=>!v||isVideoUrl(v),'ใช้ลิงก์วิดีโอที่เริ่มด้วย https://'),title:z.string().max(200).default('Video'),caption:z.string().max(1000).default('')}),
  z.object({id:z.string().max(80),type:z.literal('quote'),quote:z.string().max(5000),attribution:z.string().max(300).default('')}),
  z.object({id:z.string().max(80),type:z.literal('divider')})
 ]);
@@ -16,7 +18,7 @@ export const projectSchema=z.object({
  id:z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/),slug:z.string().regex(/^[a-z0-9][a-z0-9-]{0,99}$/),
  title:z.string().trim().min(1).max(200),headline:z.string().trim().min(1).max(250),summary:z.string().max(2000),
  category:z.enum(['dashboard','analysis','automation']),context:z.string().max(300),role:z.string().max(300),tools:z.string().max(1000),
- repo:link.default(''),demo:link.default(''),status:z.enum(['draft','published']),cover:assetSchema.nullable().default(null),
+ repo:link.default(''),demo:link.default(''),status:z.enum(['draft','published']),keepDraft:z.boolean().default(false),cover:assetSchema.nullable().default(null),
  coverStyle:z.string().max(80).default(''),coverNote:z.string().max(1500).default(''),blocks:z.array(blockSchema).max(100),
  order:z.number().int().nonnegative().default(0),revision:z.number().int().nonnegative().default(0),updatedAt:z.string().default('')
 });
@@ -34,18 +36,23 @@ export const profileSchema=z.object({
 });
 export type Profile=z.infer<typeof profileSchema>;
 export function renderPortrait(p:Profile){return `<figure class="profile-portrait portrait-${p.crop}">${p.portrait?`<img src="${esc(p.portrait.src)}" alt="${esc(p.portrait.alt||p.name)}" style="object-position:${p.focalX}% ${p.focalY}%" fetchpriority="high" width="640" height="800">`:`<div class="portrait-monogram" aria-label="${esc(p.name)}"><span>sk.</span><span>Analytics<br>&amp; perspective.</span></div>`}<figcaption>${esc(p.name)}<span>${esc(p.role)}</span></figcaption></figure>`;}
-export function renderProjectCard(p:Project){const fallback=p.id==='pizza-sales'?'sales':p.id==='ufund-risk'?'risk':p.id==='attach-rate'?'connections':p.category==='automation'?'workflow':p.category==='analysis'?'connections':'risk';return `<article class="project" data-category="${esc(p.category)}"><a class="project-link" href="/portfolio/${esc(p.slug)}/"><figure class="project-media ${p.cover?'real-cover':'illustrated-cover'}"><img src="${esc(p.cover?.src||'/covers/'+fallback+'.svg')}" alt="${esc(p.cover?.alt||p.title+' — illustrative cover')}" loading="lazy" width="900" height="650"></figure><div class="project-info"><h3>${esc(p.title)}</h3></div></a></article>`;}
+export function renderProjectCard(p:Project){const fallback=p.id==='pizza-sales'?'sales':p.id==='ufund-risk'?'risk':p.id==='attach-rate'?'connections':p.category==='automation'?'workflow':p.category==='analysis'?'connections':'risk';return `<article class="project" data-category="${esc(p.category)}"><a class="project-link" href="/portfolio/${esc(p.slug)}/"><figure class="project-media ${p.cover?'real-cover':'illustrated-cover'}"><img src="${esc(p.cover?.src||'/covers/'+fallback+'.svg')}" alt="${esc(p.cover?.alt||p.title)}" loading="lazy" width="900" height="650"></figure><div class="project-info"><h3>${esc(p.title)}</h3><span class="project-open" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 18 18 6M6 6h12v12"/></svg></span></div></a></article>`;}
 export const cleanHtml=(html:string)=>sanitizeHtml(html,{allowedTags:['p','h2','h3','strong','em','u','s','ul','ol','li','a','blockquote','pre','code','br','hr'],allowedAttributes:{a:['href','target','rel']},allowedSchemes:['https','http','mailto'],transformTags:{a:(_tag,attrs)=>({tagName:'a',attribs:{...attrs,target:'_blank',rel:'noopener noreferrer'}})}});
-export function cleanProject(raw:unknown):Project{const p=projectSchema.parse(raw);p.blocks=p.blocks.map(b=>b.type==='text'||b.type==='split'?{...b,html:cleanHtml(b.html)}:b);return p;}
+export function cleanProject(raw:unknown):Project{const p=projectSchema.parse(raw);if(p.keepDraft)p.status='draft';p.blocks=p.blocks.map(b=>b.type==='text'||b.type==='split'?{...b,html:cleanHtml(b.html)}:b);return p;}
 export const esc=(text:unknown)=>String(text??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 export function referencedAssets(p:Project){return [p.cover?.src,...p.blocks.flatMap(b=>b.type==='image'?[b.image.src]:b.type==='gallery'?b.images.map(i=>i.src):b.type==='split'?[b.image.src]:[])].filter((x):x is string=>!!x);}
 export function renderBlock(b:Block):string{
  const figure=(a:Asset)=>`<figure><a href="${esc(a.src)}" target="_blank" rel="noopener"><img src="${esc(a.src)}" alt="${esc(a.alt)}" loading="lazy"></a>${a.caption?`<figcaption>${esc(a.caption)}</figcaption>`:''}</figure>`;
  switch(b.type){
   case'text':return `<section class="story-text">${cleanHtml(b.html)}</section>`;
-  case'image':return `<section class="story-image ${b.width==='content'?'story-content-width':''}">${figure(b.image)}</section>`;
+  case'image':return `<section class="story-image align-${b.align} ${b.width==='content'?'story-content-width':''}" style="width:${b.size}%">${figure(b.image)}</section>`;
   case'gallery':return `<section class="story-gallery columns-${b.columns}">${b.images.map(figure).join('')}</section>`;
-  case'split':return `<section class="story-split image-${b.side}">${figure(b.image)}<div class="story-text">${cleanHtml(b.html)}</div></section>`;
+  case'split':return `<section class="story-split image-${b.side}" style="--image-share:${b.ratio}fr;--text-share:${100-b.ratio}fr">${figure(b.image)}<div class="story-text">${cleanHtml(b.html)}</div></section>`;
+  case'video':{
+   if(!b.url)return '';const embed=youtubeEmbedUrl(b.url),label=b.title||'Video';
+   const player=embed?`<div class="video-frame"><iframe src="${embed}" title="${esc(label)}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`:/\.(mp4|webm)(?:$|[?#])/i.test(b.url)?`<video controls preload="metadata" src="${esc(b.url)}" aria-label="${esc(label)}"></video>`:'';
+   return `<section class="story-video">${player}<a class="video-source" href="${esc(b.url)}" target="_blank" rel="noopener noreferrer">${esc(label)}<span aria-hidden="true"> ↗</span></a>${b.caption?`<p class="video-caption">${esc(b.caption)}</p>`:''}</section>`;
+  }
   case'quote':return `<blockquote class="story-quote"><p>${esc(b.quote)}</p>${b.attribution?`<cite>${esc(b.attribution)}</cite>`:''}</blockquote>`;
   case'divider':return '<hr class="story-divider">';
  }

@@ -7,6 +7,7 @@ import {referencedAssets} from '../packages/shared/content.ts';
 import {readPublishConfig,type PublishConfig} from './publish-config.ts';
 import {git,gh,redact,verifyRepository,divergence,refreshRemote,checkSecret} from './git.service.ts';
 import {exportPublic} from '../scripts/export-public.ts';
+import {pendingPortfolioChanges} from './portfolio.service.ts';
 
 const publicPath=(p:string)=>p==='content/profile.json'||/^content\/projects\/[a-z0-9-]+\.json$/.test(p)||/^content\/assets\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_.-]+\.(png|jpg|jpeg|webp)$/.test(p);
 export const isPublicContentPath=publicPath;
@@ -19,10 +20,15 @@ export async function makePublishPlan():Promise<PublishPlan>{
  for(const name of files){if(!publicPath(name))throw new Error('Unapproved public content path');const file=safeJoin(ROOT,name),stat=await fs.lstat(file);if(!stat.isFile()||stat.isSymbolicLink())throw new Error(`Unsupported file: ${name}`);const bytes=await fs.readFile(file);checkSecret(bytes,name);hashes[name]=blobHash(bytes);}
  const tree=await git(['ls-tree','-r','--full-tree','HEAD','--','content/']);const tracked=new Map<string,string>();
  for(const row of tree.split('\n').filter(Boolean)){const [meta,name]=row.split('\t');if(publicPath(name))tracked.set(name,meta.split(' ')[2]);}
- const remove=[...tracked.keys()].filter(name=>!files.has(name)).sort();
- const changes=[...[...files].filter(name=>tracked.get(name)!==hashes[name]).map(name=>({path:name,status:tracked.has(name)?'modified':'added'})),...remove.map(name=>({path:name,status:'removed from public repository'}))].sort((a,b)=>a.path.localeCompare(b.path));
+ const {remove,changes}=diffPublishedSnapshot(hashes,tracked);
+
  const fingerprint=createHash('sha256').update(JSON.stringify({hashes:Object.fromEntries(Object.entries(hashes).sort()),remove})).digest('hex');
  return {files:[...files].sort(),remove,changes,hashes,fingerprint,publishedProjects:published.length};
+}
+export function diffPublishedSnapshot(hashes:Record<string,string>,tracked:Map<string,string>){
+ const remove=[...tracked.keys()].filter(name=>!Object.hasOwn(hashes,name)).sort();
+ const changes=[...Object.keys(hashes).filter(name=>tracked.get(name)!==hashes[name]).map(name=>({path:name,status:tracked.has(name)?'modified':'added'})),...remove.map(name=>({path:name,status:'removed from public repository'}))].sort((a,b)=>a.path.localeCompare(b.path));
+ return {remove,changes};
 }
 async function systemChanges(){const names=[...(await git(['diff','--name-only','--no-renames','-z','HEAD'])).split('\0'),...(await git(['ls-files','--others','--exclude-standard','-z'])).split('\0')];return [...new Set(names.filter(Boolean).filter(n=>!publicPath(n)))];}
 const stageLabels=[['validate','ตรวจข้อมูล'],['build','สร้างเว็บ'],['sync','ตรวจ GitHub'],['commit','บันทึกเวอร์ชัน'],['push','Push ไป GitHub'],['verify','ตรวจไฟล์บน GitHub'],['deploy','ตรวจเว็บออนไลน์']];
@@ -33,13 +39,13 @@ async function load(){if(loaded)return;loaded=true;try{latest=JSON.parse(await f
 async function persist(){if(latest)await atomic(jobFile,JSON.stringify(latest,null,2));}
 async function step(job:Job,key:string){job.stage=key;job.updatedAt=new Date().toISOString();const i=job.steps.findIndex(s=>s.key===key);job.steps.forEach((s,index)=>s.status=index<i?'done':index===i?'running':'pending');await persist();}
 async function fail(job:Job,error:unknown){job.status='failed';job.error=redact(error instanceof Error?error.message:String(error));job.updatedAt=new Date().toISOString();const current=job.steps.find(s=>s.key===job.stage);if(current)current.status='failed';busy=false;await persist();}
-export async function publishStatus(){await load();const config=await readPublishConfig();try{const repo=await verifyRepository(config),plan=await makePublishPlan(),counts=await divergence(config),blocked=await systemChanges(),drafts=(await projects()).filter(p=>p.status==='draft').map(p=>({id:p.id,title:p.title,cover:p.cover,updatedAt:p.updatedAt}));return {config,repository:repo,...counts,plan:{changes:plan.changes,fingerprint:plan.fingerprint,publishedProjects:plan.publishedProjects},drafts,blocked,busy,job:latest};}catch(e:any){return {config,busy,job:latest,error:redact(e.message)};}}
+export async function publishStatus(){await load();const config=await readPublishConfig();try{const repo=await verifyRepository(config),plan=await makePublishPlan(),counts=await divergence(config),blocked=await systemChanges(),drafts=(await projects()).filter(p=>p.status==='draft').map(p=>({id:p.id,title:p.title,cover:p.cover,updatedAt:p.updatedAt,keepDraft:p.keepDraft}));return {config,repository:repo,...counts,plan:{changes:plan.changes,fingerprint:plan.fingerprint,publishedProjects:plan.publishedProjects},drafts,pending:await pendingPortfolioChanges(),blocked,busy,job:latest};}catch(e:any){return {config,busy,job:latest,error:redact(e.message)};}}
 export async function publishJobStatus(){await load();return {busy,job:latest};}
 export const publishRequestSchema=z.object({message:z.string().trim().min(1).max(200).refine(x=>!/[\r\n\x00-\x1f]/.test(x)),expectedHead:z.string().regex(/^[a-f0-9]{40}$/),fingerprint:z.string().regex(/^[a-f0-9]{64}$/)});
 export async function startPublish(raw:unknown,serial:<T>(fn:()=>Promise<T>)=>Promise<T>){
  await load();if(busy)throw Object.assign(new Error('A publish is already in progress'),{status:409});const request=publishRequestSchema.parse(raw);
  busy=true;
- try{const config=await readPublishConfig(),plan=await makePublishPlan(),counts=await divergence(config);if(!plan.changes.length&&!counts.ahead)throw Object.assign(new Error('ไม่มีข้อมูลใหม่ที่พร้อมขึ้นเว็บ ผลงานที่ยังเป็นร่างต้องกด "นำขึ้นเว็บ" ก่อน แล้วจึง Push'),{status:409});}catch(e){busy=false;throw e;}
+ try{const config=await readPublishConfig(),plan=await makePublishPlan(),counts=await divergence(config);if(!plan.changes.length&&!counts.ahead)throw Object.assign(new Error('ไม่มีการเปลี่ยนแปลงใหม่ เว็บไซต์ใช้ข้อมูลล่าสุดแล้ว'),{status:409});}catch(e){busy=false;throw e;}
  const job:Job={id:randomUUID(),status:'running',stage:'validate',steps:stageLabels.map(([key,label])=>({key,label,status:'pending'})),message:request.message,startedAt:new Date().toISOString(),updatedAt:new Date().toISOString()};busy=true;latest=job;await persist();
  void serial(()=>performPublish(job,request)).catch(e=>fail(job,e));return job;
 }
