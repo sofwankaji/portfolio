@@ -11,6 +11,7 @@
   "repo": "",
   "demo": "",
   "status": "published",
+  "keepDraft": false,
   "cover": {
     "src": "/assets/uploads/dfb2c832-6110-444d-a961-7df5d9b85408.webp",
     "alt": "",
@@ -25,7 +26,7 @@
       "html": "<h2>Test1</h2><ul><li><p>1</p></li><li><p>2</p></li><li><p>3</p></li><li><p>4</p></li></ul><p>Nordic</p><p>Test2</p><p></p>"
     }
   ],
-  "order": 7,
-  "revision": 6,
-  "updatedAt": "2026-10-30T08:51:00.819Z"
+  "order": 1,
+  "revision": 10,
+  "updatedAt": "2026-10-30T10:05:11.100Z"
 }

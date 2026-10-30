@@ -11,6 +11,7 @@
   "repo": "",
   "demo": "",
   "status": "published",
+  "keepDraft": false,
   "cover": null,
   "coverStyle": "reporting-automation",
   "coverNote": "Project description based on Sofwan’s resume. The workflow diagram is an illustration of the process, not a live system.",
@@ -31,7 +32,7 @@
       "html": "<h2>What it enables</h2><p>A structured workflow for producing student and personal reporting outputs, with recipient configuration managed separately from the transformation process.</p>"
     }
   ],
-  "revision": 1,
-  "updatedAt": "2026-10-29T14:27:19.557Z",
-  "order": 5
+  "order": 6,
+  "revision": 2,
+  "updatedAt": "2026-10-30T10:04:26.561Z"
 }

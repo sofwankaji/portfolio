@@ -11,6 +11,7 @@
   "repo": "",
   "demo": "",
   "status": "published",
+  "keepDraft": false,
   "cover": null,
   "coverStyle": "attach-rate",
   "coverNote": "Project description based on Sofwan’s resume. The cover illustrates the data relationship and contains no internal business figures.",
@@ -31,7 +32,7 @@
       "html": "<h2>What it enables</h2><p>Comparisons by business unit and brand, including Apple/non-Apple and partner views, using a connected reporting structure.</p>"
     }
   ],
-  "revision": 1,
-  "updatedAt": "2026-10-29T14:27:19.555Z",
-  "order": 4
+  "order": 2,
+  "revision": 4,
+  "updatedAt": "2026-10-30T10:04:26.411Z"
 }

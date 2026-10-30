@@ -11,6 +11,7 @@
   "repo": "",
   "demo": "",
   "status": "published",
+  "keepDraft": false,
   "cover": {
     "src": "/assets/customer-clustering.png",
     "alt": "Customer clustering analysis",
@@ -25,7 +26,7 @@
       "html": "<h2>ืิาสด่ัสพัีสีีรพัา้่าดเ</h2><p>hgdhgd</p><p>kljhjhghj</p>"
     }
   ],
-  "order": 6,
-  "revision": 7,
-  "updatedAt": "2026-10-30T08:24:39.860Z"
+  "order": 7,
+  "revision": 8,
+  "updatedAt": "2026-10-30T10:04:27.026Z"
 }

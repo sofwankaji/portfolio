@@ -11,6 +11,7 @@
   "repo": "",
   "demo": "",
   "status": "published",
+  "keepDraft": false,
   "cover": null,
   "coverStyle": "ufund-risk",
   "coverNote": "Project description based on Sofwan’s resume. The cover is an illustration; no internal dashboard screenshot or business data is displayed.",
@@ -31,7 +32,7 @@
       "html": "<h2>What it enables</h2><p>A more consistent basis for reviewing performance across customer age, location, income, student status, risk level and other portfolio segments.</p>"
     }
   ],
-  "revision": 1,
-  "updatedAt": "2026-10-29T14:27:19.552Z",
-  "order": 3
+  "order": 5,
+  "revision": 3,
+  "updatedAt": "2026-10-30T10:04:26.516Z"
 }

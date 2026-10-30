@@ -11,6 +11,7 @@
   "repo": "",
   "demo": "",
   "status": "published",
+  "keepDraft": false,
   "cover": null,
   "coverStyle": "",
   "coverNote": "",
@@ -21,7 +22,7 @@
       "html": "<p></p>"
     }
   ],
-  "order": 10,
-  "revision": 2,
-  "updatedAt": "2026-10-30T09:15:59.414Z"
+  "order": 8,
+  "revision": 3,
+  "updatedAt": "2026-10-30T10:05:06.079Z"
 }
