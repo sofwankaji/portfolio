@@ -1,0 +1,41 @@
+{
+  "id": "customer-clustering",
+  "slug": "customer-clustering",
+  "title": "Customer Clustering Using K-Means",
+  "headline": "Finding the people behind the patterns.",
+  "summary": "A customer segmentation study that turns income and spending behavior into a more useful picture of an audience.",
+  "category": "analysis",
+  "context": "Independent project",
+  "role": "Data analysis & segmentation",
+  "tools": "Python, pandas, scikit-learn, matplotlib, seaborn",
+  "repo": "https://github.com/sofwankaji/Customer-Clustering",
+  "demo": "",
+  "status": "published",
+  "cover": {
+    "src": "/assets/customer-clustering.png",
+    "alt": "The original K-means output, plotting customer income and spending score with five clusters and their centers.",
+    "caption": ""
+  },
+  "coverStyle": "customer-clustering",
+  "coverNote": "Chart from the project’s published analysis. The repository includes the notebook and recommendations.",
+  "blocks": [
+    {
+      "id": "section-0",
+      "type": "text",
+      "html": "<h2>The question</h2><p>What distinct customer groups appear when income and spending behavior are considered together?</p>"
+    },
+    {
+      "id": "section-1",
+      "type": "text",
+      "html": "<h2>The approach</h2><p>Explore the customer data, check its structure and missing values, and use the Elbow Method to select a cluster count. Apply K-means and visualize the resulting groups.</p>"
+    },
+    {
+      "id": "section-2",
+      "type": "text",
+      "html": "<h2>What it shows</h2><p>Five segments with different spending patterns. These groups support more specific ideas for promotions, customer retention and personalized offers.</p>"
+    }
+  ],
+  "revision": 1,
+  "updatedAt": "2026-10-29T14:27:19.545Z",
+  "order": 1
+}

@@ -1,0 +1,37 @@
+{
+  "id": "reporting-automation",
+  "slug": "reporting-automation",
+  "title": "Automated Brand Reporting Workflow",
+  "headline": "A reporting workflow that keeps moving.",
+  "summary": "A recurring reporting process that connects source systems, output files and brand-specific recipient settings.",
+  "category": "automation",
+  "context": "Professional experience",
+  "role": "Data Analytics Officer",
+  "tools": "Python, SQL Server, Excel, Google Sheets",
+  "repo": "",
+  "demo": "",
+  "status": "published",
+  "cover": null,
+  "coverStyle": "reporting-automation",
+  "coverNote": "Project description based on Sofwan’s resume. The workflow diagram is an illustration of the process, not a live system.",
+  "blocks": [
+    {
+      "id": "section-0",
+      "type": "text",
+      "html": "<h2>The question</h2><p>How can a recurring reporting process become more repeatable while still producing the different files and recipient groups each brand needs?</p>"
+    },
+    {
+      "id": "section-1",
+      "type": "text",
+      "html": "<h2>The approach</h2><p>Retrieve data from K2 and ITOS, transform it in Python, and generate detail and summary Excel reports. Keep brand-specific recipient configuration in Google Sheets.</p>"
+    },
+    {
+      "id": "section-2",
+      "type": "text",
+      "html": "<h2>What it enables</h2><p>A structured workflow for producing student and personal reporting outputs, with recipient configuration managed separately from the transformation process.</p>"
+    }
+  ],
+  "revision": 1,
+  "updatedAt": "2026-10-29T14:27:19.557Z",
+  "order": 5
+}

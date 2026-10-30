@@ -1,0 +1,37 @@
+{
+  "id": "ufund-risk",
+  "slug": "ufund-risk",
+  "title": "UFUND Risk Portfolio Dashboard",
+  "headline": "Making portfolio performance visible.",
+  "summary": "Portfolio reporting that brings approval, contract and risk performance into a connected analytical view.",
+  "category": "dashboard",
+  "context": "Professional experience",
+  "role": "Data Analytics Officer",
+  "tools": "Power BI, SQL Server, Python, Excel",
+  "repo": "",
+  "demo": "",
+  "status": "published",
+  "cover": null,
+  "coverStyle": "ufund-risk",
+  "coverNote": "Project description based on Sofwan’s resume. The cover is an illustration; no internal dashboard screenshot or business data is displayed.",
+  "blocks": [
+    {
+      "id": "section-0",
+      "type": "text",
+      "html": "<h2>The question</h2><p>How can business and risk teams monitor a portfolio consistently across different stages and customer segments?</p>"
+    },
+    {
+      "id": "section-1",
+      "type": "text",
+      "html": "<h2>The approach</h2><p>Transform and validate portfolio data with SQL and Python, then present performance in Power BI. Examine AppIn, approval, contracts, FPD2, NPL, MOB4/MOB6 and DPD.</p>"
+    },
+    {
+      "id": "section-2",
+      "type": "text",
+      "html": "<h2>What it enables</h2><p>A more consistent basis for reviewing performance across customer age, location, income, student status, risk level and other portfolio segments.</p>"
+    }
+  ],
+  "revision": 1,
+  "updatedAt": "2026-10-29T14:27:19.552Z",
+  "order": 3
+}

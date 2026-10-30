@@ -1,0 +1,37 @@
+{
+  "id": "attach-rate",
+  "slug": "attach-rate",
+  "title": "UFUND × COM7 Attach Rate Analytics",
+  "headline": "Connecting the branches of a business.",
+  "summary": "Monthly branch-level reporting that connects multiple data sources into a view of attach-rate performance.",
+  "category": "dashboard",
+  "context": "Professional experience",
+  "role": "Data Analytics Officer",
+  "tools": "Power BI, SQL Server, Power Query, Excel",
+  "repo": "",
+  "demo": "",
+  "status": "published",
+  "cover": null,
+  "coverStyle": "attach-rate",
+  "coverNote": "Project description based on Sofwan’s resume. The cover illustrates the data relationship and contains no internal business figures.",
+  "blocks": [
+    {
+      "id": "section-0",
+      "type": "text",
+      "html": "<h2>The question</h2><p>How can attach-rate performance be compared across business units, branches, brands and partners?</p>"
+    },
+    {
+      "id": "section-1",
+      "type": "text",
+      "html": "<h2>The approach</h2><p>Combine monthly branch data from several SQL Server sources with an Excel business-unit master. Prepare consistent views of units and revenue.</p>"
+    },
+    {
+      "id": "section-2",
+      "type": "text",
+      "html": "<h2>What it enables</h2><p>Comparisons by business unit and brand, including Apple/non-Apple and partner views, using a connected reporting structure.</p>"
+    }
+  ],
+  "revision": 1,
+  "updatedAt": "2026-10-29T14:27:19.555Z",
+  "order": 4
+}
