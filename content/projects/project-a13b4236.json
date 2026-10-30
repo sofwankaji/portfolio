@@ -1,8 +1,8 @@
 {
   "id": "project-a13b4236",
   "slug": "project-a13b4236",
-  "title": "NAGOYA",
-  "headline": "NAGOYA",
+  "title": "NAGOYA2",
+  "headline": "NAGOYA2",
   "summary": "",
   "category": "dashboard",
   "context": "",
@@ -26,6 +26,6 @@
     }
   ],
   "order": 7,
-  "revision": 5,
-  "updatedAt": "2026-10-30T08:14:47.315Z"
+  "revision": 6,
+  "updatedAt": "2026-10-30T08:51:00.819Z"
 }

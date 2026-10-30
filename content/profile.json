@@ -2,10 +2,14 @@
   "name": "Sofwan Kaji",
   "role": "Analytics & business intelligence",
   "intro": "I build dashboards, analytical tools and reporting workflows that make complex information easier to understand.",
-  "portrait": null,
-  "focalX": 50,
+  "portrait": {
+    "src": "/assets/uploads/eb7449eb-fcfb-4256-8230-318091ae1965.webp",
+    "alt": "",
+    "caption": ""
+  },
+  "focalX": 37,
   "focalY": 50,
   "crop": "portrait",
-  "revision": 3,
-  "updatedAt": "2026-10-30T06:16:53.322Z"
+  "revision": 4,
+  "updatedAt": "2026-10-30T09:01:32.456Z"
 }

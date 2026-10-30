@@ -1,0 +1,27 @@
+{
+  "id": "project-2614d195",
+  "slug": "project-2614d195",
+  "title": "dshxcv",
+  "headline": "dshxcv",
+  "summary": "",
+  "category": "dashboard",
+  "context": "",
+  "role": "",
+  "tools": "",
+  "repo": "",
+  "demo": "",
+  "status": "published",
+  "cover": null,
+  "coverStyle": "",
+  "coverNote": "",
+  "blocks": [
+    {
+      "id": "57d94fa7-db65-4615-a810-30e8d090db26",
+      "type": "text",
+      "html": "<p>fvffy</p>"
+    }
+  ],
+  "order": 9,
+  "revision": 3,
+  "updatedAt": "2026-10-30T09:01:27.225Z"
+}
