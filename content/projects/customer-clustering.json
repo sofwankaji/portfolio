@@ -22,7 +22,7 @@
     {
       "id": "section-0",
       "type": "text",
-      "html": "<h2>The question</h2><p>What distinct customer groups appear when income and spending behavior are considered together?</p>"
+      "html": "<h3><strong>The question</strong></h3><p>What distinct customer groups appear when income and spending behavior are considered together?</p>"
     },
     {
       "id": "section-1",
@@ -33,9 +33,14 @@
       "id": "section-2",
       "type": "text",
       "html": "<h2>What it shows</h2><p>Five segments with different spending patterns. These groups support more specific ideas for promotions, customer retention and personalized offers.</p>"
+    },
+    {
+      "id": "c0eb3722-f812-4cbd-856c-b5bd75bd27c3",
+      "type": "text",
+      "html": "<h2>New section</h2><p>Write your story here.</p>"
     }
   ],
-  "revision": 1,
-  "updatedAt": "2026-10-29T14:27:19.545Z",
-  "order": 1
+  "order": 1,
+  "revision": 2,
+  "updatedAt": "2026-10-30T08:03:17.256Z"
 }

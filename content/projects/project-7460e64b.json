@@ -1,0 +1,31 @@
+{
+  "id": "project-7460e64b",
+  "slug": "project-7460e64b",
+  "title": "sssd",
+  "headline": "sssd",
+  "summary": "",
+  "category": "dashboard",
+  "context": "",
+  "role": "",
+  "tools": "",
+  "repo": "",
+  "demo": "",
+  "status": "published",
+  "cover": {
+    "src": "/assets/customer-clustering.png",
+    "alt": "Customer clustering analysis",
+    "caption": ""
+  },
+  "coverStyle": "",
+  "coverNote": "",
+  "blocks": [
+    {
+      "id": "2813370d-78b4-4ab8-888a-28a68255a99f",
+      "type": "text",
+      "html": "<h2>ืิาสด่ัสพัีสีีรพัา้่าดเ</h2><p>hgdhgd</p><p>kljhjhghj</p>"
+    }
+  ],
+  "order": 6,
+  "revision": 4,
+  "updatedAt": "2026-10-30T08:04:01.847Z"
+}
