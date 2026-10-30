@@ -1,4 +1,4 @@
-import {isVideoUrl,videoPlayerSource} from '../../../packages/shared/video.ts';
+import {normalizeVideoUrl,videoPlayerSource} from '../../../packages/shared/video.ts';
 import {wn} from './writer-ui.js';
 
 // Updating a title or caption keeps the existing player and its playback position.
@@ -9,9 +9,9 @@ export function mountVideoPreview(element,initial){
  let key='',player=null;
  const release=()=>{if(player?.tagName==='VIDEO'){player.pause();player.removeAttribute('src');player.load();}};
  function update({url='',title=''}){
-  const source=videoPlayerSource(url),next=source?source.kind+':'+source.src:'';
-  root.hidden=!isVideoUrl(url);stage.hidden=!source;
-  if(!root.hidden){link.href=url;link.textContent=source?.kind==='youtube'?'เปิดใน YouTube ↗':'เปิดวิดีโอ ↗';}
+  const normalized=normalizeVideoUrl(url),source=videoPlayerSource(url),next=source?source.kind+':'+source.src:'';
+  root.hidden=!normalized;stage.hidden=!source;footer.hidden=!!source;
+  if(!root.hidden){link.href=normalized;link.textContent=source?.kind==='youtube'?'เปิดใน YouTube ↗':'เปิดวิดีโอ ↗';}
   if(next!==key){
    key=next;release();stage.replaceChildren();player=null;
    if(source?.kind==='youtube'){

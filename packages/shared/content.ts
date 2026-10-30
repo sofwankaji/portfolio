@@ -59,7 +59,7 @@ export function renderBlock(b:Block):string{
   case'video':{
    if(!b.url)return '';const embed=youtubeEmbedUrl(b.url),label=b.title||'Video';
    const player=embed?`<div class="video-frame"><iframe src="${embed}" title="${esc(label)}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`:/\.(mp4|webm)(?:$|[?#])/i.test(b.url)?`<video controls preload="metadata" src="${esc(b.url)}" aria-label="${esc(label)}"></video>`:'';
-   return `<section class="story-video">${player}<a class="video-source" href="${esc(b.url)}" target="_blank" rel="noopener noreferrer">${esc(label)}<span aria-hidden="true"> ↗</span></a>${b.caption?`<p class="video-caption">${esc(b.caption)}</p>`:''}</section>`;
+   return `<section class="story-video">${player||`<a class="video-source" href="${esc(b.url)}" target="_blank" rel="noopener noreferrer">${esc(label)}<span aria-hidden="true"> ↗</span></a>`}</section>`;
   }
   case'quote':return `<blockquote class="story-quote"><p>${esc(b.quote)}</p>${b.attribution?`<cite>${esc(b.attribution)}</cite>`:''}</blockquote>`;
   case'divider':return '<hr class="story-divider">';

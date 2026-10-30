@@ -13,7 +13,10 @@ import {publishStatus,publishJobStatus,startPublish} from './publish.service.ts'
 import {preparePortfolio,reorderProjects,listTrash,restoreTrash} from './portfolio.service.ts';
 let previewVersion='';
 async function ensurePreview(){const snapshot=await readPreviewSnapshot();if(snapshot.version!==previewVersion){const result=await buildPublic(true);previewVersion=result.version!;}return previewVersion;}
-const TOKEN=randomBytes(32).toString('hex');
+// A supervised restart may retain the active local session without storing its token.
+const resumedToken=process.env.PORTFOLIO_STUDIO_SESSION_TOKEN;
+const TOKEN=resumedToken&&/^[a-f0-9]{64}$/.test(resumedToken)?resumedToken:randomBytes(32).toString('hex');
+delete process.env.PORTFOLIO_STUDIO_SESSION_TOKEN;
 let work=Promise.resolve();
 const serial=<T>(fn:()=>Promise<T>)=>{const result=work.then(fn);work=result.then(()=>{},()=>{});return result;};
 const idSchema=z.string().regex(/^[a-z0-9][a-z0-9-]{0,79}$/);

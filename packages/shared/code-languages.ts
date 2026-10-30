@@ -1,0 +1,4 @@
+export const CODE_LANGUAGES=[['auto','Auto'],['plaintext','Plain text'],['sql','SQL'],['python','Python'],['javascript','JavaScript'],['typescript','TypeScript'],['json','JSON'],['bash','Bash'],['powershell','PowerShell'],['xml','HTML / XML'],['css','CSS'],['yaml','YAML'],['markdown','Markdown'],['java','Java'],['csharp','C#'],['cpp','C++'],['go','Go'],['rust','Rust']] as const;
+const aliases:Record<string,string>={js:'javascript',ts:'typescript',py:'python',sh:'bash',shell:'bash',html:'xml',yml:'yaml',md:'markdown',cs:'csharp','c++':'cpp',text:'plaintext',txt:'plaintext'};
+export function codeLanguage(value:string|undefined|null){const key=(value||'auto').trim().toLowerCase(),normalized=aliases[key]||key;return CODE_LANGUAGES.some(([id])=>id===normalized)?normalized:'auto';}
+export function codeLanguageLabel(value:string){return CODE_LANGUAGES.find(([id])=>id===codeLanguage(value))?.[1]||'Auto';}

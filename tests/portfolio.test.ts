@@ -36,7 +36,7 @@ test('YouTube links embed only approved hosts and valid video IDs',()=>{
  for(const url of ['https://youtu.be/jfKfPfyJRdk','https://www.youtube.com/watch?v=jfKfPfyJRdk&t=20','https://youtube.com/shorts/jfKfPfyJRdk'])assert.equal(youtubeEmbedUrl(url),embed);
  assert.equal(youtubeEmbedUrl('https://youtube.com.evil.test/watch?v=jfKfPfyJRdk'),null);assert.equal(youtubeEmbedUrl('https://youtu.be/bad'),null);
  const project=cleanProject({...sample(),blocks:[{id:'video',type:'video',url:'https://youtu.be/jfKfPfyJRdk',title:'Demo <clip>',caption:'A result'}]});
- const html=renderBlock(project.blocks[0]);assert.match(html,/<iframe src="https:\/\/www.youtube-nocookie.com\/embed\/jfKfPfyJRdk"/);assert.match(html,/Demo &lt;clip&gt;/);assert.match(html,/A result/);
+ const html=renderBlock(project.blocks[0]);assert.match(html,/<iframe src="https:\/\/www.youtube-nocookie.com\/embed\/jfKfPfyJRdk"/);assert.match(html,/Demo &lt;clip&gt;/);assert.doesNotMatch(html,/A result/);
  assert.throws(()=>cleanProject({...sample(),blocks:[{id:'video',type:'video',url:'javascript:alert(1)'}]}));
 });
 

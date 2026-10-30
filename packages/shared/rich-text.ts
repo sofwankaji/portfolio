@@ -1,3 +1,6 @@
+import {decodeHTML} from 'entities';
+import {codeLanguage,codeLanguageLabel} from './code-languages.ts';
+import {highlightedCode} from './code-highlight.ts';
 import sanitizeHtml from 'sanitize-html';
 import {normalizeColor,FONT_SIZES,CALLOUT_TONES,FONT_CHOICES} from './rich-style.ts';
 const alignment=new Set(['left','center','right','justify']);
@@ -17,10 +20,11 @@ function styleFor(tag:string,raw:string){
 const positive=(value:string,max=20)=>/^\d{1,3}$/.test(value)&&Number(value)>0&&Number(value)<=max;
 export function cleanRichText(html:string){return sanitizeHtml(html,{
  allowedTags:['p','h2','h3','h4','strong','em','u','s','sub','sup','span','mark','ul','ol','li','a','blockquote','pre','code','br','hr','aside','table','thead','tbody','tfoot','tr','th','td','colgroup','col'],
- allowedAttributes:{a:['href','target','rel'],span:['style'],mark:['style','data-color'],p:['style'],h2:['style'],h3:['style'],h4:['style'],blockquote:['style'],aside:['data-callout'],ul:['data-type'],ol:['start'],li:['data-type','data-checked','role','aria-checked','aria-disabled'],th:['colspan','rowspan','data-colwidth','style'],td:['colspan','rowspan','data-colwidth','style'],col:['style']},
+ allowedAttributes:{code:['class'],a:['href','target','rel'],span:['style'],mark:['style','data-color'],p:['style'],h2:['style'],h3:['style'],h4:['style'],blockquote:['style'],aside:['data-callout'],ul:['data-type'],ol:['start'],li:['data-type','data-checked','role','aria-checked','aria-disabled'],th:['colspan','rowspan','data-colwidth','style'],td:['colspan','rowspan','data-colwidth','style'],col:['style']},
  allowedSchemes:['https','http','mailto'],
  transformTags:{'*':(tag,attrs)=>{
   const safe={...attrs};if(safe.style){safe.style=styleFor(tag,safe.style);if(!safe.style)delete safe.style;}
+  if(tag==='code'){const language=(safe.class||'').split(/\s+/).find(value=>value.startsWith('language-'));if(language)safe.class='language-'+codeLanguage(language.slice(9));else delete safe.class;}
   if(tag==='a'){safe.target='_blank';safe.rel='noopener noreferrer';}
   if(tag==='aside'){if(!CALLOUT_TONES.includes(safe['data-callout'] as any))safe['data-callout']='note';}
   if(tag==='mark'){const color=normalizeColor(safe['data-color']||'');if(color)safe['data-color']=color;else delete safe['data-color'];}
@@ -31,4 +35,10 @@ export function cleanRichText(html:string){return sanitizeHtml(html,{
   return {tagName:tag,attribs:safe};
  }}
 });}
-export function renderRichText(html:string){return cleanRichText(html).replace(/<table\b[^>]*>/g,'<div class="story-table-scroll">$&').replace(/<\/table>/g,'$&</div>');}
+export function renderRichText(html:string){
+ const clean=cleanRichText(html),code=clean.replace(/<pre><code(?: class="language-([a-z0-9+-]+)")?>([\s\S]*?)<\/code><\/pre>/g,(_all,language,inner)=>{
+  const key=codeLanguage(language),text=decodeHTML(sanitizeHtml(inner.replace(/<br\s*\/?>/gi,'\n'),{allowedTags:[],allowedAttributes:{}}));
+  return '<div class="story-code-block"><div class="story-code-toolbar"><span>'+codeLanguageLabel(key)+'</span><button type="button" data-copy-code aria-label="Copy code">Copy</button></div><pre><code class="hljs language-'+key+'">'+highlightedCode(text,key)+'</code></pre></div>';
+ });
+ return code.replace(/<table\b[^>]*>/g,'<div class="story-table-scroll">$&').replace(/<\/table>/g,'$&</div>');
+}

@@ -10,6 +10,6 @@ test('pasting video inserts after selected media and preserves existing text',()
  const selected=NodeSelection.create(doc,paragraph.nodeSize),afterImage=paragraph.nodeSize+image.nodeSize;
  assert.deepEqual(videoPasteRange(selected),{from:afterImage,to:afterImage});
  const range=videoPasteRange(TextSelection.create(doc,afterImage+1));assert.deepEqual(range,{from:afterImage,to:afterImage+empty.nodeSize});
- assert.equal(videoPasteRange(TextSelection.create(doc,2)),null);assert.equal(videoPasteRange(TextSelection.create(doc,1,5)),null);
+ assert.deepEqual(videoPasteRange(TextSelection.create(doc,2)),{from:paragraph.nodeSize,to:paragraph.nodeSize});assert.deepEqual(videoPasteRange(TextSelection.create(doc,1,5)),{from:paragraph.nodeSize,to:paragraph.nodeSize});
  const nested=schema.nodes.doc.create(null,schema.nodes.blockquote.create(null,empty));assert.equal(videoPasteRange(TextSelection.create(nested,2)),null);
 });
