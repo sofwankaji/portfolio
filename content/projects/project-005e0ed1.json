@@ -1,0 +1,51 @@
+{
+  "id": "project-005e0ed1",
+  "slug": "project-005e0ed1",
+  "title": "Strong Post",
+  "headline": "Strong Post",
+  "summary": "",
+  "category": "dashboard",
+  "context": "",
+  "role": "",
+  "tools": "",
+  "repo": "",
+  "demo": "",
+  "status": "published",
+  "keepDraft": false,
+  "cover": {
+    "src": "/assets/road-accident-dashboard.png",
+    "alt": "UK road accident dashboard",
+    "caption": ""
+  },
+  "location": "",
+  "year": "",
+  "coverTone": "#e8e9eb",
+  "coverStyle": "",
+  "coverNote": "",
+  "blocks": [
+    {
+      "id": "27abfc6f-606f-472f-b532-5898fc04b277",
+      "type": "split",
+      "image": {
+        "src": "/assets/uploads/96165fa4-b1b5-4dd0-86c9-7d89c39ee537.webp",
+        "alt": "",
+        "caption": ""
+      },
+      "html": "<h2>staff</h2><p>adfh/damlfdm</p><p>da;lfklkghajmd;lkfkmdas\\</p><p>;LKDAMLFMHGAD</p>",
+      "side": "left",
+      "ratio": 50
+    },
+    {
+      "id": "518114c1-c7a5-4c2f-b507-5f066ebb6b32",
+      "type": "divider"
+    },
+    {
+      "id": "66cef7e8-8267-493f-9508-535cc40d6fba",
+      "type": "text",
+      "html": "<p>ZXC,VNBKJsnsa</p><p>'sLKDJGLKasdj</p><p>lksJCLKgjsdKLJKS\\</p><p>LKSadjlkfJ</p><p></p>"
+    }
+  ],
+  "order": 12,
+  "revision": 3,
+  "updatedAt": "2026-10-30T16:50:57.280Z"
+}
