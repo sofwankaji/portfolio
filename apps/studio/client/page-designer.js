@@ -1,5 +1,7 @@
+import { mountTemplateLibrary } from "./template-library.js";
+import { BUTTON_PRESETS, applyButtonPreset, BUTTON_ICONS } from "../../../packages/shared/design-buttons.ts";
 import { designNodeSchema, designSectionSchema, designPageSchema, fitDesignNode, designLink, clamp } from "../../../packages/shared/page-design.ts";
-import { seedDesignPage, renderDesignSection, renderDesignNode, designNodeStyle, DESIGN_FORMATS, formatDesignPage } from "../../../packages/shared/page-design-render.ts";
+import { seedDesignPage, renderDesignSection, renderDesignNode, designNodeStyle } from "../../../packages/shared/page-design-render.ts";
 import { animateCanvasNode } from "../../../packages/shared/canvas-motion.js";
 const node = (tag, text, cls) => {
   const n = document.createElement(tag);
@@ -11,7 +13,7 @@ const copy = (v) => JSON.parse(JSON.stringify(v));
 const icons = { text: "M4 5h16M12 5v15M8 20h8", image: "M3 3h18v18H3zM3 17l6-6 5 5 4-7 3 8M8 7h.01", button: "M3 7h18v10H3zM8 12h8", shape: "M5 5h14v14H5z", projects: "M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z", layout: "M3 3h18v18H3zM3 10h18M12 10v11", undo: "M9 5 3 11l6 6M3 11h10c5 0 7 3 7 8", redo: "m15 5 6 6-6 6M21 11h-10c-5 0-7 3-7 8", up: "m6 14 6-6 6 6", down: "m6 10 6 6 6-6", trash: "M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7", copy: "M8 8h13v13H8zM16 8V3H3v13h5", lock: "M6 10h12v11H6zM8 10V6a4 4 0 0 1 8 0v4", eye: "M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Zm10-3a3 3 0 1 0 0 6 3 3 0 0 0 0-6", desktop: "M2 3h20v14H2zM8 22h8M12 17v5", mobile: "M7 2h10v20H7zM11 18h2", align: "M3 3v18M7 6h14M7 12h9M7 18h14" };
 const svg = (key) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${icons[key] || icons.layout}"/></svg>`;
 const names = { text: "ข้อความ", image: "รูปภาพ", button: "ปุ่ม", shape: "รูปทรง", projects: "ผลงาน" };
-export function mountPageDesigner({ element, getProfile, getProjects, chooseMedia, uploadFiles, onChange, onError, openSettings }) {
+export function mountPageDesigner({ element, getProfile, getProjects, chooseMedia, uploadFiles, onChange, onError, openSettings, api, checkpoint, openHistory }) {
   let pageKey = "about", sectionId = "", selectedId = "", device = "desktop", zoom = "fit", scale = 1, seeds = {}, past = [], future = [], editing = false, gesture = null, stopPlayback = () => {
   };
   const read = () => getProfile()?.website.designer;
@@ -118,7 +120,7 @@ export function mountPageDesigner({ element, getProfile, getProjects, chooseMedi
     }
   };
   enabled.append(toggle, node("span", "ใช้บนเว็บ"));
-  toolbar.append(pageSelect, button("แบบหน้า", showFormats, "layout"), undo, redo, modes, zoomSelect, enabled);
+  toolbar.append(pageSelect, button("Template", showFormats, "layout"), button("Default", () => resetDefault().catch(onError)), button("เวอร์ชัน", openHistory), undo, redo, modes, zoomSelect, enabled);
   function updateHistory() {
     undo.disabled = !past.length;
     redo.disabled = !future.length;
@@ -216,6 +218,7 @@ export function mountPageDesigner({ element, getProfile, getProjects, chooseMedi
     box.dataset.motionDelay = n.motionDelay;
     box.setAttribute("style", designNodeStyle(n, section().nodes.indexOf(n)));
     box.innerHTML = '<div class="canvas-content">' + renderDesignNode(n, getProjects(), true) + "</div>";
+    box.classList.toggle("canvas-node-round",n.type==="button"&&n.width===n.height&&n.radius>=n.width/2);
     box.classList.toggle("canvas-mobile-hidden", n.mobileHidden);
     box.classList.toggle("canvas-node-hidden", n.hidden);
     paintSelection();
@@ -373,7 +376,7 @@ export function mountPageDesigner({ element, getProfile, getProjects, chooseMedi
       for (const [key, label] of [["focalX", "จุดโฟกัส X"], ["focalY", "จุดโฟกัส Y"]]) field(grid2, label, n[key], (v) => updateNode(key, v), { type: "number", min: 0, max: 100 });
     }
     if (n.type === "button") {
-      const g = group("กดแล้วไปที่"), destinations = [["/", "หน้าแรก"], ["/about/", "About"], ["/portfolio/", "Work / ผลงานทั้งหมด"], ["/contact/", "Contact"], ["mailto:" + getProfile().website.email, "อีเมล"], ...getProjects().filter((p) => p.status === "published").map((p) => ["/portfolio/" + p.slug + "/", p.title]), ...page().sections.map((s2) => ["#design-" + s2.id, "ส่วน: " + s2.name])];
+      const g = group("กดแล้วไปที่"), destinations = [["/", "หน้าแรก"], ["/about/", "About"], ["/portfolio/", "Work / ผลงานทั้งหมด"], ["/contact/", "Contact"], ["mailto:" + getProfile().website.email, "อีเมล"], ["/Sofwan-Kaji-Resume.pdf", "ดาวน์โหลด Resume"], ...getProfile().website.phone ? [["tel:" + getProfile().website.phone.replace(/[^+\d]/g, ""), "โทรศัพท์"]] : [], ...getProjects().filter((p) => p.status === "published").map((p) => ["/portfolio/" + p.slug + "/", p.title]), ...page().sections.map((s2) => ["#design-" + s2.id, "ส่วน: " + s2.name])];
       const picker = node("select");
       picker.setAttribute("aria-label", "เลือกหน้าปลายทาง");
       for (const [href2, label] of [...destinations, ["custom", "ลิงก์อื่น…"]]) {
@@ -383,35 +386,58 @@ export function mountPageDesigner({ element, getProfile, getProjects, chooseMedi
       }
       picker.value = destinations.some(([href2]) => href2 === n.href) ? n.href : "custom";
       picker.onchange = () => {
-        if (picker.value !== "custom") mutate(() => selected().href = picker.value);
+        if (picker.value !== "custom") mutate(() => {
+          selected().href = picker.value;
+          selected().download = picker.value === "/Sofwan-Kaji-Resume.pdf";
+        });
       };
       g.append(picker);
       const previewHref = (href2) => href2.startsWith("/") ? "http://127.0.0.1:4173" + href2 : href2.startsWith("#") ? "http://127.0.0.1:4173/" + (pageKey === "about" ? "" : pageKey === "work" ? "portfolio/" : "contact/") + href2 : href2;
       const input = field(g, "ลิงก์", n.href, (v) => {
         const result = designLink.safeParse(v);
-        input.setCustomValidity(result.success ? "" : "ใช้ https://, mailto: หรือ /");
+        input.setCustomValidity(result.success ? "" : "ใช้ https://, mailto:, tel: หรือ /");
         if (result.success) {
           updateNode("href", v);
           test.href = previewHref(v || "/");
         }
       });
       checkbox(g, "เปิดแท็บใหม่", n.newTab, (v) => selected().newTab = v);
+      if (n.href.startsWith("/")) checkbox(g, "ดาวน์โหลดไฟล์", n.download, (v) => selected().download = v);
       const test = node("a", "ทดสอบปลายทาง", "designer-destination-test");
       const href = n.href || "/";
       test.href = previewHref(href);
       test.target = "_blank";
       test.rel = "noopener noreferrer";
       g.append(test);
+      const presets = group("เลือกแบบปุ่ม"), presetGrid = node("div", void 0, "designer-button-presets");
+      presets.append(presetGrid);
+      for (const preset of BUTTON_PRESETS) {
+        const b = button(preset.name, () => mutate(() => {
+          applyButtonPreset(selected(), preset.id, getProfile().website.theme.accent, getProfile().website.theme.ink);
+          fitDesignNode(selected(), section().height);
+        }), null, "designer-button-preset"), sample = node("span", preset.id === "icon" ? "↗" : preset.id === "circle" ? "↗" : "Button", "button-preset-sample preset-" + preset.id);
+        sample.setAttribute("aria-hidden", "true");
+        if (preset.id === "icon" || preset.id === "circle") sample.innerHTML = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="' + BUTTON_ICONS.diagonal + '"/></svg>';
+        b.prepend(sample);
+        presetGrid.append(b);
+      }
       const style = group("รูปแบบปุ่ม");
       field(style, "แบบปุ่ม", n.buttonStyle, (v) => {
-        selected().color = v === "solid" ? "#ffffff" : getProfile().website.theme.ink;
+        selected().color = ["solid","gradient"].includes(v) ? "#ffffff" : getProfile().website.theme.ink;
         updateNode("buttonStyle", v);
         queueMicrotask(renderInspector);
-      }, { options: [["solid", "พื้นทึบ"], ["outline", "เส้นขอบ"], ["text", "ข้อความ"]] });
-      field(style, "เมื่อชี้ปุ่ม", n.hover, (v) => updateNode("hover", v), { options: [["none", "นิ่ง"], ["lift", "ลอยขึ้น"], ["scale", "ขยายเบา ๆ"], ["fill", "เปลี่ยนสี"]] });
+      }, { options: [["solid", "พื้นทึบ"], ["outline", "เส้นขอบ"], ["text", "ข้อความ"], ["soft", "สีอ่อน"], ["gradient", "ไล่สี"]] });
+      field(style, "เมื่อชี้ปุ่ม", n.hover, (v) => updateNode("hover", v), { options: [["none", "นิ่ง"], ["lift", "ลอยขึ้น"], ["scale", "ขยายเบา ๆ"], ["fill", "เปลี่ยนสี"], ["wipe", "สีไหลผ่าน"]] });
       field(style, "สีเมื่อชี้", n.hoverBackground, (v) => updateNode("hoverBackground", v), { type: "color" });
       field(style, "สีข้อความเมื่อชี้", n.hoverColor, (v) => updateNode("hoverColor", v), { type: "color" });
       field(style, "ความหนาขอบ", n.borderWidth, (v) => updateNode("borderWidth", v), { type: "number", min: 0, max: 8 });
+      field(style, "ไอคอน", n.buttonIcon, (v) => updateNode("buttonIcon", v), { options: [["none", "ไม่มี"], ["arrow", "ลูกศรขวา"], ["diagonal", "ลูกศรเฉียง"], ["download", "ดาวน์โหลด"], ["mail", "อีเมล"], ["play", "เล่น"], ["chevron", "ถัดไป"]] });
+      field(style, "ตำแหน่งไอคอน", n.iconPosition, (v) => updateNode("iconPosition", v), { options: [["left", "ซ้าย"], ["right", "ขวา"]] });
+      checkbox(style, "แสดงเฉพาะไอคอน", n.iconOnly, (v) => {
+        selected().iconOnly = v;
+        if (v && selected().buttonIcon === "none") selected().buttonIcon = "diagonal";
+      });
+      checkbox(style, "เงาปุ่ม", n.shadow, (v) => selected().shadow = v);
     }
     if (n.type === "projects") {
       const g = group("ผลงานจาก Studio");
@@ -497,32 +523,26 @@ export function mountPageDesigner({ element, getProfile, getProjects, chooseMedi
     const box = artboard.querySelector(".designer-selected");
     if (box) stopPlayback = animateCanvasNode(box);
   }
+  const templateLibrary = mountTemplateLibrary({ api, getProfile, getProjects, getPageKey: () => pageKey, onError, onApply: async (design, name) => {
+    await checkpoint("ก่อนใช้ " + name, "template");
+    mutate(() => {
+      read()[pageKey] = design;
+      read()[pageKey].enabled = true;
+      sectionId = "";
+      selectedId = "";
+    });
+  }, onDefault: resetDefault });
   function showFormats() {
-    const dialog = node("dialog", void 0, "designer-format-dialog"), heading = node("div", void 0, "dialog-heading");
-    heading.append(node("h2", "เลือกแบบหน้า"), button("ปิด", () => dialog.close()));
-    const grid = node("div", void 0, "designer-format-options");
-    for (const format of DESIGN_FORMATS) {
-      const design = formatDesignPage(getProfile(), pageKey, format.id, () => crypto.randomUUID()), card = button(format.name, () => {
-        dialog.close();
-        mutate(() => {
-          read()[pageKey] = design;
-          read()[pageKey].enabled = true;
-          sectionId = "";
-          selectedId = "";
-        });
-      }, null, "designer-format-card"), preview = node("div", void 0, "designer-format-preview"), mini = node("div", void 0, "canvas-page is-desktop");
-      preview.inert = true;
-      preview.setAttribute("aria-hidden", "true");
-      mini.innerHTML = renderDesignSection(design.sections[0], getProjects());
-      preview.append(mini);
-      card.prepend(preview);
-      card.append(node("small", format.note));
-      grid.append(card);
-    }
-    dialog.append(heading, grid);
-    document.body.append(dialog);
-    dialog.onclose = () => dialog.remove();
-    dialog.showModal();
+    return templateLibrary.open();
+  }
+  async function resetDefault() {
+    await checkpoint("ก่อนกลับ Default · " + pageKey, "default");
+    mutate(() => {
+      read()[pageKey] = designPageSchema.parse({});
+      delete seeds[pageKey];
+      sectionId = "";
+      selectedId = "";
+    });
   }
   function addElement(type) {
     if (section().nodes.length >= 40) return onError(new Error("ส่วนนี้มีครบ 40 องค์ประกอบแล้ว"));
@@ -812,5 +832,12 @@ export function mountPageDesigner({ element, getProfile, getProjects, chooseMedi
     renderInspector();
     updateHistory();
   }
-  return { render, resize };
+  return { render, resize, reset() {
+    seeds = {};
+    past = [];
+    future = [];
+    sectionId = "";
+    selectedId = "";
+    stopPlayback();
+  } };
 }

@@ -9,7 +9,11 @@
     "dev:studio": "tsx server/index.ts --studio-only",
     "build": "tsx scripts/build.ts",
     "build:public": "tsx scripts/export-public.ts",
-    "test": "tsx --test tests/*.test.ts"
+    "test": "tsx --test tests/*.test.ts",
+    "template:check": "tsx scripts/template-tool.ts check",
+    "template:import": "tsx scripts/template-tool.ts import",
+    "template:schema": "tsx scripts/template-tool.ts schema",
+    "template:example": "tsx scripts/template-tool.ts example"
   },
   "dependencies": {
     "@tiptap/core": "^3.0.0",

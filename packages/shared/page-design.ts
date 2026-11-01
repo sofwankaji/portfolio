@@ -3,12 +3,12 @@ import {z} from 'zod';
 const id=z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/);
 const color=z.string().regex(/^#[a-fA-F0-9]{6}$/);
 const image=z.object({src:z.string().regex(/^\/assets\/(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_.-]+\.(png|jpg|jpeg|webp)$/),alt:z.string().max(500).default('')});
-export const designLink=z.string().max(2000).refine(v=>!v||/^https?:\/\//i.test(v)||/^mailto:[^\s<>"']+@[^\s<>"']+$/.test(v)||/^\/(?!\/)[a-zA-Z0-9/_#?.=&%+\-.]*$/.test(v)||/^#[a-zA-Z0-9_-]+$/.test(v),'ใช้ https://, อีเมล หรือพาธในเว็บไซต์');
+export const designLink=z.string().max(2000).refine(v=>!v||/^https?:\/\//i.test(v)||/^mailto:[^\s<>"']+@[^\s<>"']+$/.test(v)||/^tel:\+?[\d ()-]{3,40}$/.test(v)||/^\/(?!\/)[a-zA-Z0-9/_#?.=&%+\-.]*$/.test(v)||/^#[a-zA-Z0-9_-]+$/.test(v),'ใช้ https://, อีเมล โทรศัพท์ หรือพาธในเว็บไซต์');
 export const designNodeSchema=z.object({
  id,type:z.enum(['text','image','button','shape','projects']),name:z.string().max(120).default(''),
  x:z.number().finite().min(0).max(1176),y:z.number().finite().min(0).max(2376),width:z.number().finite().min(24).max(1200),height:z.number().finite().min(24).max(2400),
  text:z.string().max(8000).default(''),image:image.nullable().default(null),href:designLink.default(''),
- newTab:z.boolean().default(false),buttonStyle:z.enum(['solid','outline','text']).default('solid'),hover:z.enum(['none','lift','scale','fill']).default('lift'),hoverBackground:color.default('#455ce9'),hoverColor:color.default('#ffffff'),borderWidth:z.number().min(0).max(8).default(1),
+ newTab:z.boolean().default(false),download:z.boolean().default(false),buttonStyle:z.enum(['solid','outline','text','soft','gradient']).default('solid'),buttonIcon:z.enum(['none','arrow','diagonal','download','mail','play','chevron']).default('none'),iconPosition:z.enum(['left','right']).default('right'),iconOnly:z.boolean().default(false),shadow:z.boolean().default(false),hover:z.enum(['none','lift','scale','fill','wipe']).default('lift'),hoverBackground:color.default('#455ce9'),hoverColor:color.default('#ffffff'),borderWidth:z.number().min(0).max(8).default(1),
  motion:z.enum(['none','fade','rise','left','right','zoom','stagger']).default('none'),motionDuration:z.number().min(.2).max(2.5).default(.7),motionDelay:z.number().min(0).max(2).default(0),
  fontSize:z.number().min(12).max(180).default(24),font:z.enum(['inherit','IBM Plex Sans','Manrope','Inter','Georgia']).default('inherit'),weight:z.enum(['300','400','500','600','700']).default('400'),italic:z.boolean().default(false),align:z.enum(['left','center','right']).default('left'),tag:z.enum(['p','h1','h2','h3']).default('p'),lineHeight:z.number().min(1).max(2.5).default(1.4),
  color:color.default('#1c1d20'),background:color.default('#eeeff0'),radius:z.number().min(0).max(600).default(0),opacity:z.number().min(.05).max(1).default(1),

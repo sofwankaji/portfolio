@@ -9,3 +9,7 @@ The approved GitHub destination is sofwankaji/portfolio on main. Use fixed argum
 Preserve imported Sofwan Kaji content and the Porcelain design. Public content is English. Studio navigation is Thai with Noto Sans Thai; English typography is IBM Plex Sans. Uploads must be decoded and re-encoded before storage. Content writes are atomic, revision-checked and keep recoverable versions. Drafts are excluded from public exports.
 
 Run npm run test and npm run build after relevant changes. Verify save/reload, image captions, block order and project detail navigation in a browser. Existing prototype files are preserved in the original conversation workspace.
+
+## Reference-based AI templates
+
+When asked to add a template from a website reference, follow AI-TEMPLATES.md and the version 1 JSON schema in packages/shared/template-kit.ts. Validate and import the JSON through the template tool; no application code changes are needed for a new custom template. Preview it in Studio and preserve the current website until the user applies it.
