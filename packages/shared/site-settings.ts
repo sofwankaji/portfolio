@@ -1,9 +1,11 @@
 import {z} from 'zod';
+import {pageDesignSchema} from './page-design.ts';
 
 const copy=(value:string,max=300)=>z.string().max(max).default(value);
 const color=(value:string)=>z.string().regex(/^#[0-9a-fA-F]{6}$/).default(value);
 const websiteLink=z.string().max(2000).refine(value=>/^https?:\/\//i.test(value)||/^\/(?!\/)[a-zA-Z0-9/_#?.=&%+\-.]*$/.test(value),'Use an https URL or a local website path');
 export const siteSettingsSchema=z.object({
+ designer:pageDesignSchema,
  heroTitle:copy('Helping ideas thrive\nthrough meaningful data.'),
  note:copy('Always exploring...'),
  servicesTitle:copy('I can help you with...'),

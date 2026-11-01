@@ -12,7 +12,8 @@ export async function readPreviewSnapshot(){
  }));
  const profile=await readProfileDraft()||await readProfile();
  const hash=createHash('sha256').update(JSON.stringify({projects:collection,profile}));
- for(const name of ['editorial.css','editorial.js','motion-math.js'])hash.update(await fs.readFile(path.join(ROOT,'apps/web/public',name)));
+ for(const name of ['editorial.css','editorial.js','motion-math.js','canvas.css'])hash.update(await fs.readFile(path.join(ROOT,'apps/web/public',name)));
+ for(const name of ['canvas-motion.js','design-motion.ts'])hash.update(await fs.readFile(path.join(ROOT,'packages/shared',name)));
  const version=hash.digest('hex');
  return {projects:collection,profile,version};
 }

@@ -69,3 +69,19 @@ The public site keeps the Porcelain design, English content and IBM Plex Sans. S
 Studio opens on the Projects tab with cover-image cards. Click a card to write its story, or use the + tile or Add project button to create a blank document. The back button returns to the gallery.
 
 Use **Push ทั้งพอร์ต** to collect saved changes and current automatic drafts across every project, then publish one complete snapshot: additions, edits, order, visibility, and removals. Named new projects are included automatically. **ซ่อนจากเว็บ** explicitly keeps a project local; unnamed projects also stay local. Hidden or deleted projects and unused uploads are removed from the public snapshot. Drag cards to reorder, or use the menu’s move buttons. Deleted work is recoverable in **ถังพัก**. Image blocks have size/alignment controls; split layouts have adjustable image proportions and side selection. Video blocks accept HTTPS links, embed validated YouTube links with the privacy-enhanced player, and support direct MP4/WebM links. Push remains available while idle; a repeated push with no changes verifies the approved remote and reports that GitHub is current without inventing a new deployment result. The local website on port 4173 renders current automatic project/profile drafts in a separate preview folder and refreshes open preview pages automatically. Production exports still use saved, visible projects only.
+
+
+## ออกแบบหน้าเว็บจาก Studio
+
+ไปที่ **หน้าเว็บไซต์ → ออกแบบ** เพื่อแก้ About/หน้าแรก, Work และ Contact บนพื้นที่ออกแบบโดยตรง
+
+- เลือก **แบบหน้า**: Editorial, Spotlight, Gallery หรือ Statement แล้วแก้ต่อได้ทุกองค์ประกอบ การเปลี่ยนแบบย้อนกลับได้ด้วยปุ่มย้อนกลับ
+- เพิ่มข้อความ รูป ปุ่ม รูปทรง และส่วนผลงาน เลือกเลเยอร์แล้วลากจัดวางหรือจับมุมเพื่อปรับขนาด รูปรักษาสัดส่วนขณะลากมุม (กด Alt เพื่อปรับกรอบอิสระ)
+- ดับเบิลคลิกข้อความเพื่อพิมพ์ ใช้แผงด้านข้างปรับฟอนต์ สี น้ำหนัก ระยะบรรทัด และตำแหน่ง หรือใช้ลูกศรบนแป้นพิมพ์ขยับทีละ 1 หน่วย (Shift ทีละ 10)
+- **เลย์เอาต์** เพิ่มส่วนสำเร็จรูป เช่น รูปข้างข้อความ หัวเรื่อง คำพูด และแกลเลอรีผลงาน แต่ละส่วนเรียงลำดับ ทำสำเนา ลบ และเปลี่ยนสีพื้นได้
+- เลือกปุ่มแล้วตั้ง **กดแล้วไปที่** เป็นหน้าภายใน ผลงาน อีเมล ส่วนในหน้า หรือลิงก์ภายนอก พร้อมเลือกรูปแบบเส้นขอบ/พื้นทึบ สี มุมโค้ง และพฤติกรรมเมื่อชี้
+- **Motion** มี Fade, Slide, Zoom และ Stagger ทีละคำ ปรับเวลา/หน่วงและกดเล่นเพื่อตรวจได้ เอฟเฟกต์เริ่มเมื่อเลื่อนถึงองค์ประกอบบนเว็บ และเคารพการตั้งค่าลดการเคลื่อนไหวของอุปกรณ์
+- มุมมองมือถือจัดองค์ประกอบตามลำดับเลเยอร์อัตโนมัติ รูปและข้อความไม่ใช้พิกัดตายตัวบนจอเล็ก สามารถซ่อนองค์ประกอบเฉพาะมือถือได้
+- เปิด **ใช้บนเว็บ** เพื่อใช้แบบนี้ (การเริ่มแก้จะเปิดให้) ปิดเพื่อกลับไปใช้หน้าแบบเดิม โดยแบบที่ออกแบบยังเก็บไว้ เมนูและท้ายเว็บแก้ได้จาก **ตั้งค่าเว็บไซต์**
+
+ร่างเก็บอัตโนมัติ ใช้ **บันทึก** และ **Push** ชุดเดิมเพื่อส่งทั้งข้อความ ภาพ เลย์เอาต์ ปุ่ม และ motion ขึ้นเว็บไซต์ การเปิดแท็บออกแบบเพียงอย่างเดียวไม่เปลี่ยนหน้าเว็บเดิม รูปที่ใช้งานในแบบที่เปิดใช้จะรวมอยู่ในรายการเผยแพร่ และส่วนผลงานใช้ลำดับ/การซ่อนเดียวกับแท็บผลงาน

@@ -9,14 +9,22 @@ import {renderAbout,renderWork,renderContact} from '../packages/shared/site-rend
 export const OUT=path.join(ROOT,'apps/web/out');
 export const PREVIEW_OUT=path.join(ROOT,'.history/preview-site');
 const source=path.join(ROOT,'apps/web/public');
-export async function buildStudio(){await build({entryPoints:[path.join(ROOT,'apps/studio/client/main.js')],outfile:path.join(ROOT,'apps/studio/dist/studio.js'),bundle:true,format:'esm',minify:false,sourcemap:false});for(const name of ['index.html','studio.css'])await fs.copyFile(path.join(ROOT,'apps/studio/client',name),path.join(ROOT,'apps/studio/dist',name));}
+export async function buildStudio(){
+ const target=path.join(ROOT,'apps/studio/dist');
+ await build({entryPoints:[path.join(ROOT,'apps/studio/client/main.js')],outfile:path.join(target,'studio.js'),bundle:true,format:'esm',minify:false,sourcemap:false});
+ await fs.copyFile(path.join(ROOT,'apps/studio/client/studio.css'),path.join(target,'studio.css'));
+ await fs.copyFile(path.join(source,'canvas.css'),path.join(target,'canvas.css'));
+ const version=createHash('sha256').update(await fs.readFile(path.join(target,'studio.js'))).update(await fs.readFile(path.join(target,'studio.css'))).update(await fs.readFile(path.join(target,'canvas.css'))).digest('hex').slice(0,12);
+ const html=(await fs.readFile(path.join(ROOT,'apps/studio/client/index.html'),'utf8')).replace(/((?:src|href)="\/(?:studio\.(?:js|css)|canvas\.css))"/g,`$1?v=${version}"`);
+ await atomic(path.join(target,'index.html'),html);
+}
 export async function buildPublic(preview=false){
  const output=preview?PREVIEW_OUT:OUT,snapshot=preview?await readPreviewSnapshot():null;
  const all=snapshot?.projects||await projects(),pub=all.filter(p=>p.status==='published'),profile=snapshot?.profile||await readProfile();
  await fs.mkdir(output,{recursive:true});await fs.cp(source,output,{recursive:true,filter:src=>!src.endsWith('.template.html')&&!src.endsWith('.d.ts')});
  await build({absWorkingDir:ROOT,entryPoints:[path.join(source,'editorial.js')],outfile:path.join(output,'editorial.js'),bundle:true,format:'iife',minify:false});
- const assetHash=createHash('sha256').update(await fs.readFile(path.join(output,'editorial.css'))).update(await fs.readFile(path.join(output,'editorial.js'))).digest('hex').slice(0,12);
- const live=(html:string)=>{html=html.replace(/((?:href|src)="\/editorial\.(?:css|js))"/g,`$1?v=${assetHash}"`);return preview?html.replace('</body>',`<script src="/__studio/live.js" data-version="${snapshot!.version}"></script></body>`):html;};
+ const assetHash=createHash('sha256').update(await fs.readFile(path.join(output,'editorial.css'))).update(await fs.readFile(path.join(output,'editorial.js'))).update(await fs.readFile(path.join(output,'canvas.css'))).digest('hex').slice(0,12);
+ const live=(html:string)=>{html=html.replace(/((?:href|src)="\/(?:editorial\.(?:css|js)|canvas\.css))"/g,`$1?v=${assetHash}"`);return preview?html.replace('</body>',`<script src="/__studio/live.js" data-version="${snapshot!.version}"></script></body>`):html;};
 
  await atomic(path.join(output,'studio/index.html'),'<!doctype html><html lang="th"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=http://127.0.0.1:3001/"><title>Portfolio Studio</title></head><body><a href="http://127.0.0.1:3001/">เปิด Portfolio Studio</a></body></html>');
  const about=live(renderAbout(profile,pub));await atomic(path.join(output,'index.html'),about);await atomic(path.join(output,'about/index.html'),about);

@@ -1,5 +1,7 @@
 import {mountWriterToolbar} from './writer-toolbar.js';
 import {mountSiteSettings} from './site-settings.js';
+import {mountPageDesigner} from './page-designer.js';
+import {hasProjectTitle} from '../../../packages/shared/portfolio.ts';
 import {mountWriter} from './notion-writer.js';
 import {attachProjectMenu,mountProjectGrid} from './project-grid.js';
 const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
@@ -15,6 +17,8 @@ let writerToolbar=null;
 let profileDraftTimer=null,profileDraftWork=Promise.resolve(),profileDraftFingerprint='';
 const workingCopies=new Map();let draggingProject=null,collectionBusy=false,gridInteraction=null;const projectMenus=[];
 const websiteSettings=mountSiteSettings({element:$('#website-settings'),getProfile:()=>profile,onChange:profileChanged,chooseMedia});
+const pageDesigner=mountPageDesigner({element:$('#website-designer'),getProfile:()=>profile,getProjects:()=>all.map(saved=>{const draft=workingCopies.get(saved.id);const p=draft?.revision===saved.revision?draft:saved;return {...p,order:saved.order,status:hasProjectTitle(p)&&!p.keepDraft?'published':'draft'};}).sort((a,b)=>a.order-b.order),chooseMedia,uploadFiles,onChange:profileChanged,onError:e=>toast(e.message,true),openSettings:()=>document.querySelector('[data-profile-tab="website"]').click()});
+document.querySelectorAll('[data-profile-tab]').forEach(button=>button.addEventListener('click',()=>{if(button.dataset.profileTab==='design'){pageDesigner.render();requestAnimationFrame(pageDesigner.resize);}}));
 const labels={text:'ข้อความ',image:'รูปภาพ',gallery:'แกลเลอรี',split:'รูป + ข้อความ',video:'วิดีโอ',quote:'คำพูด',divider:'เส้นคั่น'};
 function toast(text,error=false){$('#toast').textContent=text;$('#toast').style.background=error?'#803d3d':'';$('#toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').hidden=true,5500);}
 function status(text){$('#save-state').textContent=text;}
@@ -117,7 +121,7 @@ function renderProjects(){
  gridInteraction=mountProjectGrid(grid,{onReorder:persistProjectOrder,onDragState:id=>draggingProject=id});
 }
 
-function renderProfile(){if(!profile)return;$$('[data-profile]').forEach(n=>n.value=profile[n.dataset.profile]);$('#profile-alt').value=profile.portrait?.alt||'';previewProfile();websiteSettings.render();}
+function renderProfile(){if(!profile)return;$$('[data-profile]').forEach(n=>n.value=profile[n.dataset.profile]);$('#profile-alt').value=profile.portrait?.alt||'';previewProfile();websiteSettings.render();pageDesigner.render();requestAnimationFrame(pageDesigner.resize);}
 function previewProfile(){if(!profile)return;const image=$('#profile-preview-image'),preview=$('#profile-upload-preview');image.hidden=!profile.portrait;$('#profile-placeholder').hidden=!!profile.portrait;$('#profile-preview-frame').dataset.crop=profile.crop;const position=profile.focalX+'% '+profile.focalY+'%';image.style.objectPosition=position;preview.style.backgroundPosition=position;preview.classList.toggle('has-image',!!profile.portrait);preview.style.backgroundImage=profile.portrait?'url("'+profile.portrait.src+'")':'none';if(profile.portrait)image.src=profile.portrait.src;$('#profile-preview-role').textContent=profile.role;$('#profile-preview-intro').textContent=profile.intro;$('#profile-preview-title').textContent=profile.website.heroTitle;$('#profile-preview-name').textContent=profile.name;}
 function profileChanged(){profileDirty=true;clearTimeout(profileDraftTimer);profileDraftTimer=setTimeout(()=>persistProfileDraft().catch(e=>toast(e.message,true)),700);status('กำลังเก็บ…');previewProfile();}
 function setPortrait(asset){profile.portrait=asset?ref(asset):null;profile.focalX=50;profile.focalY=50;profileChanged();renderProfile();}
@@ -148,7 +152,7 @@ $$('[data-action]').forEach(b=>b.onclick=async()=>{const a=b.dataset.action;try{
  }catch(e){toast(e.message,true);}});
 $('#file-input').onchange=async e=>{const files=Array.from(e.target.files);if(!files.length)return;try{const result=await uploadFiles(files);if(uploadContext==='profile')setPortrait(result[0]);if(uploadContext==='picker'){if(!picker.multiple)picker.selected.clear();(picker.multiple?result:result.slice(0,1)).forEach(a=>picker.selected.add(a.src));renderMedia($('#media-choices'),true);$('#media-selection-count').textContent='เลือก '+picker.selected.size+' รูป';}toast('อัปโหลด '+result.length+' รูปแล้ว');}catch(e){toast(e.message,true);}finally{e.target.value='';}};
 
-document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();save();}});window.addEventListener('beforeunload',e=>{if((profileDirty&&JSON.stringify(profile)!==profileDraftFingerprint)||draftVersion!==editVersion){e.preventDefault();e.returnValue='';}});
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();save();}});window.addEventListener('beforeunload',e=>{if((profileDirty&&JSON.stringify(profile)!==profileDraftFingerprint)||(project&&draftVersion!==editVersion)){e.preventDefault();e.returnValue='';}});
 const duplicate=button('ทำสำเนาโปรเจกต์เป็น Draft',()=>newProject(true));$('[data-action="trash"]').before(duplicate);
 const statusLabel=el('label','สถานะการแสดงผล'),statusSelect=$('#project-status').cloneNode(true);statusSelect.removeAttribute('id');statusSelect.dataset.field='status';statusSelect.onchange=()=>{snapshot();project.status=statusSelect.value;project.keepDraft=project.status==='draft';$('#project-status').value=project.keepDraft?'draft':'published';renderPublicationState();changed();};statusLabel.append(statusSelect);$('#settings-panel .form-stack').prepend(statusLabel);const coverBox=$('.cover-box');$('#settings-panel [data-field="title"]').closest('label').after(coverBox);
 $('#settings-panel [data-field="headline"]').closest('label').hidden=true;const moreSettings=el('details',undefined,'project-more-settings'),moreBody=el('div',undefined,'form-stack');moreSettings.append(el('summary','เครื่องมือ ลิงก์ และการตั้งค่าเพิ่มเติม'),moreBody);const mainForm=$('#settings-panel .form-stack');Array.from(mainForm.children).filter(n=>n.matches('.form-row')||n.querySelector('[data-field="coverNote"]')||n.matches('button')).forEach(n=>moreBody.append(n));mainForm.append(moreSettings);

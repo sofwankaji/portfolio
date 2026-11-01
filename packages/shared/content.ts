@@ -3,6 +3,7 @@ import {cleanRichText,renderRichText} from './rich-text.ts';
 import {siteHead,siteHeader,siteFooter,arrow,buttonContents} from './site-shell.ts';
 import {siteSettingsSchema} from './site-settings.ts';
 import {isVideoUrl,youtubeEmbedUrl} from './video.ts';
+import {designAssets} from './page-design.ts';
 
 export const assetPath=z.string().regex(/^\/assets\/(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_.-]+\.(?:png|jpg|jpeg|webp)$/);
 export const assetSchema=z.object({src:assetPath,alt:z.string().max(500).default(''),caption:z.string().max(1000).default('')});
@@ -41,7 +42,7 @@ export const profileSchema=z.object({
  revision:z.number().int().nonnegative().default(0),updatedAt:z.string().default('')
 });
 export type Profile=z.infer<typeof profileSchema>;
-export function profileAssets(p:Profile){return [p.portrait?.src,p.aboutImage?.src,p.featureImage?.src].filter((x):x is string=>!!x);}
+export function profileAssets(p:Profile){return [...new Set([p.portrait?.src,p.aboutImage?.src,p.featureImage?.src,...designAssets(p.website.designer)].filter((x):x is string=>!!x))];}
 export function renderPortrait(p:Profile){return `<figure class="profile-portrait portrait-${p.crop}">${p.portrait?`<img src="${esc(p.portrait.src)}" alt="${esc(p.portrait.alt||p.name)}" style="object-position:${p.focalX}% ${p.focalY}%" fetchpriority="high" width="640" height="800">`:`<div class="portrait-monogram" aria-label="${esc(p.name)}"><span>sk.</span><span>Analytics<br>&amp; perspective.</span></div>`}<figcaption>${esc(p.name)}<span>${esc(p.role)}</span></figcaption></figure>`;}
 export function projectCover(p:Project){const fallback=p.id==='pizza-sales'?'sales':p.id==='ufund-risk'?'risk':p.id==='attach-rate'?'connections':p.category==='automation'?'workflow':p.category==='analysis'?'connections':'risk';return p.cover?.src||'/covers/'+fallback+'.svg';}
 export function renderProjectCard(p:Project){return `<article class="project" data-category="${esc(p.category)}"><a class="project-link" href="/portfolio/${esc(p.slug)}/"><figure class="project-media ${p.cover?'real-cover':'illustrated-cover'}" style="--cover-tone:${p.coverTone}"><img src="${esc(projectCover(p))}" alt="${esc(p.cover?.alt||p.title)}" loading="lazy" width="900" height="650"></figure><div class="project-info"><h3>${esc(p.title)}</h3><span class="project-open" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 18 18 6M6 6h12v12"/></svg></span></div></a></article>`;}

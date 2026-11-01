@@ -1,0 +1,54 @@
+import type {Profile,Project} from './content.ts';
+import type {DesignNode,DesignSection,DesignPage,DesignPageKey} from './page-design.ts';
+import {designNodeSchema,designSectionSchema} from './page-design.ts';
+const e=(v:unknown)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
+const cover=(p:Project)=>p.cover?.src||'/covers/'+(p.category==='analysis'?'connections':p.category==='automation'?'workflow':'sales')+'.svg';
+const cw=(v:number)=>`${Number((v/12).toFixed(4))}cqw`;
+export function designNodeStyle(n:DesignNode,order=0){return `left:${n.x/12}%;top:${cw(n.y)};width:${n.width/12}%;min-height:${cw(n.height)};--node-height:${cw(n.height)};--node-ratio:${n.width}/${n.height};--node-font:${cw(n.fontSize)};--mobile-font:${Math.min(n.fontSize,n.tag==='h1'?46:n.tag==='h2'?34:24)}px;font-size:var(--node-font);font-family:${n.font==='inherit'?'inherit':"'"+n.font+"', 'Noto Sans Thai', sans-serif"};font-weight:${n.weight};font-style:${n.italic?'italic':'normal'};text-align:${n.align};line-height:${n.lineHeight};color:${n.color};--node-background:${n.background};--node-hover-bg:${n.hoverBackground};--node-hover-color:${n.hoverColor};--node-border:${n.borderWidth}px;--node-radius:${cw(n.radius)};opacity:${n.opacity};z-index:${order+1}`;}
+export function renderDesignNode(n:DesignNode,projects:Project[],editing=false){
+ if(n.type==='text')return `<${n.tag} class="canvas-text"${editing?' data-editable-text':''}>${e(n.text)}</${n.tag}>`;
+ if(n.type==='image')return n.image?`<img class="canvas-image" src="${e(n.image.src)}" alt="${e(n.image.alt)}" style="object-fit:${n.fit};object-position:${n.focalX}% ${n.focalY}%" loading="lazy" draggable="false">`:`<div class="canvas-image-placeholder" aria-label="Image"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor"><rect x="7" y="7" width="50" height="50" rx="4"/><circle cx="23" cy="22" r="5"/><path d="m8 47 14-14 11 11 10-19 14 23"/></svg></div>`;
+ if(n.type==='button')return `<a class="canvas-button button-style-${n.buttonStyle} button-hover-${n.hover}" href="${e(n.href||'#main')}" style="justify-content:${n.align==='left'?'flex-start':n.align==='right'?'flex-end':'center'}"${n.newTab?' target="_blank" rel="noopener noreferrer"':''}>${e(n.text)}</a>`;
+ if(n.type==='shape')return '<div class="canvas-shape" aria-hidden="true"></div>';
+ const list=projects.filter(p=>p.status==='published'&&!p.keepDraft).slice(0,n.limit);
+ return `<div class="canvas-projects" style="--canvas-columns:${n.columns}">${list.length?list.map(p=>`<a class="canvas-project" href="/portfolio/${e(p.slug)}/"><figure style="background:${p.coverTone}"><img src="${e(cover(p))}" alt="${e(p.cover?.alt||p.title)}" loading="lazy" draggable="false"></figure><span>${e(p.title)}<i aria-hidden="true">↗</i></span></a>`).join(''):'<p class="canvas-empty-work">Your selected work will appear here.</p>'}</div>`;
+}
+export function renderDesignSection(s:DesignSection,projects:Project[],editing=false){
+ // Work collections reserve their natural grid height as projects are added.
+ const height=Math.max(s.height,...s.nodes.filter(n=>!n.hidden&&n.type==='projects').map(n=>n.y+Math.ceil(Math.min(projects.filter(p=>p.status==='published'&&!p.keepDraft).length,n.limit)/n.columns)*(n.width/n.columns*.79+64)+40));
+ return `<section class="canvas-section" id="design-${s.id}" data-section-id="${s.id}" style="background:${s.background};--section-height:${cw(height)}"><div class="canvas-section-inner" style="min-height:var(--section-height)">${s.nodes.map((n,i)=>n.hidden&&!editing?'':`<div class="canvas-node canvas-node-${n.type}${n.mobileHidden?' canvas-mobile-hidden':''}${n.hidden?' canvas-node-hidden':''}" data-node-id="${n.id}" data-canvas-motion="${n.motion}" data-motion-duration="${n.motionDuration}" data-motion-delay="${n.motionDelay}" style="${designNodeStyle(n,i)}"><div class="canvas-content">${renderDesignNode(n,projects,editing)}</div></div>`).join('')}</div></section>`;
+}
+export function renderDesignPage(p:DesignPage,projects:Project[],editing=false){return `<div class="canvas-page">${p.sections.map(s=>renderDesignSection(s,projects,editing)).join('')}</div>`;}
+
+// Converting copies the current content; simply opening Studio never changes it.
+export function seedDesignPage(profile:Profile,key:DesignPageKey,uid:()=>string):DesignPage{
+ const w=profile.website,t=w.theme;
+ const n=(type:DesignNode['type'],values:Partial<DesignNode>)=>designNodeSchema.parse({id:uid(),type,x:80,y:80,width:600,height:120,color:t.ink,background:t.surface,lineHeight:values.tag&&values.tag!=='p'?1.12:1.4,align:type==='button'?'center':'left',...values});
+ const section=(name:string,height:number,nodes:DesignNode[],background=t.background)=>designSectionSchema.parse({id:uid(),name,height,background,nodes});
+ const work=(title:string)=>section('Selected work',1200,[n('text',{text:title,tag:'h2',fontSize:48,width:1040,height:90,y:64}),n('projects',{y:210,width:1040,height:860})]);
+ if(key==='work')return {enabled:false,hideHeader:false,hideFooter:false,sections:[section('Introduction',420,[n('text',{text:w.workHeadline,tag:'h1',fontSize:78,width:1040,height:280})]),work(w.workTitle)]};
+ if(key==='contact')return {enabled:false,hideHeader:false,hideFooter:false,sections:[section('Contact',760,[n('text',{text:w.contactTitle,tag:'h1',fontSize:94,width:800,height:280}),n('text',{text:w.contactIntro,y:400,width:650,height:140,fontSize:26}),n('button',{text:w.email,href:'mailto:'+w.email,y:590,width:640,height:80,color:'#ffffff',background:t.accent,radius:80,fontSize:24})])]};
+ const portrait=profile.aboutImage||profile.portrait;
+ const sections=[section('Introduction',1120,[n('text',{text:w.heroTitle,tag:'h1',fontSize:84,width:1040,height:300}),n('text',{text:profile.intro,x:80,y:490,width:330,height:290,fontSize:25}),n('image',{image:portrait?{src:portrait.src,alt:portrait.alt}:null,x:510,y:450,width:610,height:600,focalX:profile.aboutFocalX,focalY:profile.aboutFocalY}),n('text',{text:w.note,x:80,y:850,width:330,height:90,fontSize:18,color:t.muted})])];
+ if(w.showServices)sections.push(section('Expertise',680,[n('text',{text:w.servicesTitle,tag:'h2',fontSize:48,width:1040,height:110}),...w.services.slice(0,3).flatMap((s,i)=>[n('text',{text:s.title,tag:'h3',x:80+i*360,y:260,width:320,height:110,fontSize:30}),n('text',{text:s.description,x:80+i*360,y:400,width:320,height:200,fontSize:20})])]));
+ if(w.showFeature)sections.push(section('Approach',760,[n('text',{text:w.featureTitle,tag:'h2',fontSize:58,x:80,y:120,width:470,height:220}),n('text',{text:w.featureBody,x:80,y:390,width:470,height:280,fontSize:22}),n(profile.featureImage?'image':'shape',{image:profile.featureImage?{src:profile.featureImage.src,alt:profile.featureImage.alt}:null,x:650,y:130,width:460,height:460,radius:profile.featureImage?0:240,background:t.accent,mobileHidden:!profile.featureImage})],t.surface));
+ if(w.showSelectedWork)sections.push(work(w.workTitle));
+ return {enabled:false,hideHeader:false,hideFooter:false,sections};
+}
+
+export const DESIGN_FORMATS=[{id:'editorial',name:'Editorial',note:'หัวเรื่องใหญ่และพื้นที่ว่าง'},{id:'spotlight',name:'Spotlight',note:'รูปโปรไฟล์คู่ข้อความ'},{id:'gallery',name:'Gallery',note:'ให้ผลงานเป็นจุดเด่น'},{id:'statement',name:'Statement',note:'ข้อความเรียบง่าย จัดกึ่งกลาง'}] as const;
+export function formatDesignPage(profile:Profile,key:DesignPageKey,format:string,uid:()=>string):DesignPage{
+ const base=seedDesignPage(profile,key,uid);if(format==='editorial')return base;
+ const w=profile.website,t=w.theme,portrait=profile.aboutImage||profile.portrait;
+ const n=(type:DesignNode['type'],v:Partial<DesignNode>)=>designNodeSchema.parse({id:uid(),type,x:80,y:80,width:1040,height:140,color:t.ink,background:t.surface,hoverBackground:t.accent,lineHeight:v.tag&&v.tag!=='p'?1.12:1.4,align:type==='button'?'center':'left',...v});
+ const s=(name:string,height:number,nodes:DesignNode[],background=t.background)=>designSectionSchema.parse({id:uid(),name,height,nodes,background});
+ const title=key==='work'?w.workHeadline:key==='contact'?w.contactTitle:w.heroTitle,body=key==='contact'?w.contactIntro:profile.intro;
+ const target=key==='contact'?'mailto:'+w.email:'/portfolio/',label=key==='contact'?w.email:w.labels.allWork;
+ let lead:DesignSection;
+ if(format==='spotlight')lead=s('Spotlight',880,[n('text',{text:title,tag:'h1',fontSize:64,width:570,height:300,y:120,motion:'rise'}),n('text',{text:body,fontSize:23,width:480,y:460,height:200,motion:'fade',motionDelay:.1}),n('button',{text:label,href:target,y:720,width:380,height:70,fontSize:20,radius:80,background:t.accent,color:'#ffffff'}),n('image',{image:portrait?{src:portrait.src,alt:portrait.alt}:null,x:740,y:80,width:380,height:720,radius:12,motion:'fade'})]);
+ else if(format==='gallery')lead=s('Gallery introduction',560,[n('text',{text:title,tag:'h1',fontSize:86,height:280,motion:'stagger'}),n('text',{text:body,fontSize:24,x:600,y:370,width:520,height:140,motion:'fade'})]);
+ else lead=s('Statement',880,[n('text',{text:title,tag:'h1',fontSize:92,x:120,y:150,width:960,height:360,align:'center',motion:'stagger'}),n('text',{text:body,x:270,y:550,width:660,height:160,fontSize:24,align:'center',motion:'fade',motionDelay:.15}),n('button',{text:label,href:target,x:390,y:760,width:420,height:64,fontSize:20,background:t.accent,color:'#ffffff',radius:80})]);
+ const sections=[lead];
+ if(key!=='contact')sections.push(s('Selected work',1400,[n('text',{text:w.workTitle,tag:'h2',fontSize:44,height:90}),n('projects',{y:220,height:1100,columns:format==='gallery'?3:2,limit:9})]));
+ return {enabled:false,hideHeader:false,hideFooter:false,sections};
+}

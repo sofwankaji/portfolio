@@ -1,5 +1,7 @@
 import {advanceMagnet,followPointer} from './motion-math.js';
+import {startCanvasMotion} from '../../../packages/shared/canvas-motion.js';
 (()=>{
+ startCanvasMotion();
  const reduced=matchMedia('(prefers-reduced-motion:reduce)'),fine=matchMedia('(hover:hover) and (pointer:fine)');
  const canMove=()=>!reduced.matches&&fine.matches&&innerWidth>540;
  const toggle=document.querySelector('.menu-toggle'),menu=document.querySelector('#site-menu');
