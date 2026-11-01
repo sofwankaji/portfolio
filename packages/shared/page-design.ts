@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {pageThemeSchema} from './page-theme.ts';
 
 const id=z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/);
 const color=z.string().regex(/^#[a-fA-F0-9]{6}$/);
@@ -17,7 +18,7 @@ export const designNodeSchema=z.object({
  columns:z.number().int().min(1).max(3).default(2),limit:z.number().int().min(1).max(30).default(6)
 });
 export const designSectionSchema=z.object({id,name:z.string().max(120).default('Section'),height:z.number().min(240).max(2400).default(640),background:color.default('#ffffff'),nodes:z.array(designNodeSchema).max(40)}).superRefine((s,ctx)=>{for(const n of s.nodes)if(n.x+n.width>1200.01||n.y+n.height>s.height+.01)ctx.addIssue({code:'custom',message:'องค์ประกอบต้องอยู่ภายในส่วนของหน้า'});});
-export const designPageSchema=z.object({enabled:z.boolean().default(false),hideHeader:z.boolean().default(false),hideFooter:z.boolean().default(false),sections:z.array(designSectionSchema).max(16).default([])}).superRefine((p,ctx)=>{const ids=p.sections.flatMap(s=>[s.id,...s.nodes.map(n=>n.id)]);if(new Set(ids).size!==ids.length)ctx.addIssue({code:'custom',message:'ID ซ้ำในหน้า'});if(p.enabled&&!p.sections.length)ctx.addIssue({code:'custom',message:'เพิ่มส่วนของหน้าก่อนเปิดใช้'});if(p.sections.reduce((sum,s)=>sum+s.nodes.length,0)>200)ctx.addIssue({code:'custom',message:'ใช้ได้สูงสุด 200 องค์ประกอบต่อหน้า'});});
+export const designPageSchema=z.object({enabled:z.boolean().default(false),hideHeader:z.boolean().default(false),hideFooter:z.boolean().default(false),theme:pageThemeSchema.nullable().default(null),sections:z.array(designSectionSchema).max(16).default([])}).superRefine((p,ctx)=>{const ids=p.sections.flatMap(s=>[s.id,...s.nodes.map(n=>n.id)]);if(new Set(ids).size!==ids.length)ctx.addIssue({code:'custom',message:'ID ซ้ำในหน้า'});if(p.enabled&&!p.sections.length)ctx.addIssue({code:'custom',message:'เพิ่มส่วนของหน้าก่อนเปิดใช้'});if(p.sections.reduce((sum,s)=>sum+s.nodes.length,0)>200)ctx.addIssue({code:'custom',message:'ใช้ได้สูงสุด 200 องค์ประกอบต่อหน้า'});});
 const blank=()=>designPageSchema.parse({});
 export const pageDesignSchema=z.object({about:designPageSchema.default(blank),work:designPageSchema.default(blank),contact:designPageSchema.default(blank)}).default(()=>({about:blank(),work:blank(),contact:blank()}));
 export type DesignNode=z.infer<typeof designNodeSchema>;

@@ -1,3 +1,4 @@
+import { pageThemeStyle } from "../../../packages/shared/page-theme.ts";
 import { DESIGN_FORMATS, formatDesignPage, renderDesignPage, seedDesignPage } from "../../../packages/shared/page-design-render.ts";
 import { templateSchema, instantiateTemplate, templateAiBrief } from "../../../packages/shared/template-kit.ts";
 const el = (tag, text, cls) => {
@@ -14,7 +15,7 @@ const button = (text, fn, cls = "button") => {
 };
 const categories = [["all", "ทั้งหมด"], ["minimal", "Minimal"], ["portfolio", "ผลงาน"], ["profile", "โปรไฟล์"], ["custom", "ของฉัน"]];
 export function mountTemplateLibrary({ api, getProfile, getProjects, getPageKey, onApply, onDefault, onError }) {
-  async function open() {
+  async function open(preferredId) {
     const dialog = el("dialog", void 0, "template-library-dialog"), heading = el("div", void 0, "dialog-heading"), copy = el("div");
     copy.append(el("h2", "เลือก Template"));
     heading.append(copy, button("ปิด", () => dialog.close(), "button subtle"));
@@ -40,7 +41,21 @@ export function mountTemplateLibrary({ api, getProfile, getProjects, getPageKey,
       const view = el("div", void 0, "template-full-page"), page = el("div", void 0, "canvas-page is-desktop");
       page.inert = true;
       page.style.setProperty("--site-font", "'" + getProfile().website.theme.font + "'");
-      page.innerHTML = renderDesignPage(selectedDesign, getProjects());
+      page.innerHTML = renderDesignPage(selectedDesign, getProjects(), false, "desktop");
+      const theme = selectedDesign.theme || getProfile().website.theme;
+      page.style.cssText += pageThemeStyle(selectedDesign.theme);
+      const nav = el("div", void 0, "template-preview-nav");
+      nav.style.color = theme.ink;
+      nav.style.background = theme.background;
+      const links = el("div");
+      for (const label of ["Work", "About", "Contact"]) links.append(el("span", label));
+      nav.append(el("span", getProfile().name), links);
+      page.prepend(nav);
+      const footer = el("div", void 0, "template-preview-footer");
+      footer.style.background = theme.footer;
+      footer.style.color = theme.footerInk;
+      footer.append(el("strong", getProfile().website.footerTitle), el("p", getProfile().website.email));
+      page.append(footer);
       view.append(page);
       full.append(head, view);
       document.body.append(full);
@@ -69,9 +84,17 @@ export function mountTemplateLibrary({ api, getProfile, getProjects, getPageKey,
         thumb.inert = true;
         thumb.setAttribute("aria-hidden", "true");
         const design = make(entry);
-        page.innerHTML = renderDesignPage({ ...design, sections: design.sections.slice(0, 1) }, getProjects());
+        page.innerHTML = renderDesignPage({ ...design, sections: design.sections.slice(0, 1) }, getProjects(), false, "desktop");
         thumb.append(page);
-        card.append(thumb, el("strong", entry.name), el("small", entry.note));
+        const palette = el("div", void 0, "template-theme-palette"), theme = design.theme || getProfile().website.theme;
+        palette.setAttribute("aria-hidden", "true");
+        for (const color of [theme.background, theme.ink, theme.accent, theme.surface]) {
+          const swatch = el("i");
+          swatch.style.background = color;
+          palette.append(swatch);
+        }
+        card.append(thumb, el("strong", entry.name), el("small", design.theme?.name || "ธีมเว็บไซต์ปัจจุบัน"), palette);
+        card.title = entry.note;
         card.setAttribute("aria-label", entry.name);
         card.setAttribute("aria-pressed", String(entry.id === selected));
         grid.append(card);
@@ -98,11 +121,12 @@ export function mountTemplateLibrary({ api, getProfile, getProjects, getPageKey,
         const full = entry.builtin ? null : await api("/templates/" + entry.id);
         if (selected !== id) return;
         selectedDesign = make(entry, full);
+        if (selectedDesign.theme) detailNote.textContent = selectedDesign.theme.name + " · " + selectedDesign.theme.headingFont + " / " + selectedDesign.theme.font;
         const page = el("div", void 0, "canvas-page is-desktop");
         page.inert = true;
         page.style.setProperty("--site-font", "'" + getProfile().website.theme.font + "'");
         page.setAttribute("aria-hidden", "true");
-        page.innerHTML = renderDesignPage(selectedDesign, getProjects());
+        page.innerHTML = renderDesignPage(selectedDesign, getProjects(), false, "desktop");
         preview.replaceChildren(page);
         apply.textContent = id === "default" ? "กลับ Default" : "ใช้ Template";
         apply.disabled = false;
@@ -138,13 +162,26 @@ export function mountTemplateLibrary({ api, getProfile, getProjects, getPageKey,
       tabs.append(b);
     }
     search.oninput = draw;
+    const refreshTimer = setInterval(async () => {
+      if (!dialog.open || document.hidden) return;
+      try {
+        const next = await api("/templates");
+        if (JSON.stringify(next) !== JSON.stringify(custom)) {
+          custom = next;
+          draw();
+          hint.textContent = "มี Template ใหม่ในคลัง";
+        }
+      } catch {
+      }
+    }, 3e3);
+    dialog.addEventListener("close", () => clearInterval(refreshTimer), { once: true });
     async function loadCustom() {
       custom = await api("/templates");
       draw();
     }
     try {
       await loadCustom();
-      await select("default");
+      await select(typeof preferredId === "string" && choices().some((entry) => entry.id === preferredId) ? preferredId : "default");
     } catch (error) {
       onError(error);
     }
@@ -167,12 +204,38 @@ export function mountTemplateLibrary({ api, getProfile, getProjects, getPageKey,
         onError(error);
       }
     });
-    kit.append(copyPrompt);
+    const agentButton = button("เตรียมคำสั่งให้ AI Agent", async () => {
+      if (!reference.value || !/^https?:\/\//i.test(reference.value) || !reference.checkValidity()) {
+        reference.setCustomValidity("ใส่ลิงก์เว็บอ้างอิงที่เริ่มด้วย https://");
+        reference.reportValidity();
+        return;
+      }
+      reference.setCustomValidity("");
+      agentButton.disabled = true;
+      try {
+        const job = await api("/templates/agent-job", { method: "POST", body: JSON.stringify({ id: "ai-" + crypto.randomUUID().slice(0, 8), name: "Reference Study", reference: reference.value, page: getPageKey(), layout: "editorial", theme: "spotlight" }) });
+        await navigator.clipboard.writeText(job.agentPrompt);
+        agentButton.textContent = "คัดลอกคำสั่ง Agent แล้ว";
+        status.textContent = "วางคำสั่งในแชตของ AI Agent เพื่อให้สร้างและเพิ่มเข้าคลังได้เลย";
+      } catch (error) {
+        status.textContent = error.message;
+      } finally {
+        agentButton.disabled = false;
+      }
+    });
+    reference.oninput = () => reference.setCustomValidity("");
+    agentButton.classList.add("primary");
+    kit.append(agentButton);
+    const advanced = el("details", void 0, "template-import-advanced");
+    advanced.append(el("summary", "นำเข้าไฟล์หรือใช้ AI ภายนอก"));
+    const advancedBody = el("div", void 0, "template-import-advanced-body");
+    advancedBody.append(copyPrompt);
+    advanced.append(advancedBody);
     for (const [path, label, file] of [["schema", "Schema", "portfolio-template.schema.json"], ["example", "ไฟล์ตัวอย่าง", "portfolio-template.example.json"]]) {
       const link = el("a", label, "button");
       link.href = "/api/templates/" + path;
       link.download = file;
-      kit.append(link);
+      advancedBody.append(link);
     }
     body.append(kit);
     const pasteLabel = el("label", "ไฟล์ Template จาก AI"), text = el("textarea"), upload = el("input"), status = el("p", "", "template-import-status"), preview = el("div", void 0, "template-import-preview");
@@ -196,7 +259,8 @@ export function mountTemplateLibrary({ api, getProfile, getProjects, getPageKey,
         status.textContent = error.message;
       }
     };
-    body.append(pasteLabel, upload, status, preview);
+    advancedBody.append(pasteLabel, upload);
+    body.append(advanced, status, preview);
     const foot = el("div", void 0, "dialog-footer"), validate = button("ดูตัวอย่าง", check), importButton = button("เพิ่มเข้าคลัง", async () => {
       const t = check();
       if (!t) return;
@@ -212,6 +276,8 @@ export function mountTemplateLibrary({ api, getProfile, getProjects, getPageKey,
       }
     }, "button primary");
     importButton.disabled = true;
+    foot.hidden = true;
+    advanced.addEventListener("toggle", () => { foot.hidden = !advanced.open; });
     foot.append(validate, importButton);
     dialog.append(heading, body, foot);
     document.body.append(dialog);
@@ -221,7 +287,7 @@ export function mountTemplateLibrary({ api, getProfile, getProjects, getPageKey,
       try {
         const t = templateSchema.parse(JSON.parse(text.value)), page = el("div", void 0, "canvas-page is-desktop");
         page.inert = true;
-        page.innerHTML = renderDesignPage(instantiateTemplate(t, getProfile(), () => crypto.randomUUID()), getProjects());
+        page.innerHTML = renderDesignPage(instantiateTemplate(t, getProfile(), () => crypto.randomUUID()), getProjects(), false, "desktop");
         preview.replaceChildren(page);
         status.textContent = t.name + " · " + t.design.sections.length + " ส่วน";
         importButton.disabled = false;

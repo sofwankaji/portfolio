@@ -1,3 +1,4 @@
+import { PAGE_THEMES, getPageTheme, applyPageTheme, pageThemeStyle, pageThemeSchema } from "../../../packages/shared/page-theme.ts";
 import { mountTemplateLibrary } from "./template-library.js";
 import { BUTTON_PRESETS, applyButtonPreset, BUTTON_ICONS } from "../../../packages/shared/design-buttons.ts";
 import { designNodeSchema, designSectionSchema, designPageSchema, fitDesignNode, designLink, clamp } from "../../../packages/shared/page-design.ts";
@@ -197,6 +198,14 @@ export function mountPageDesigner({ element, getProfile, getProjects, chooseMedi
     artboard.append(frameLabel);
     const p = node("div", void 0, "canvas-page " + (device === "mobile" ? "is-mobile" : "is-desktop"));
     p.style.setProperty("--site-font", "'" + getProfile().website.theme.font + "'");
+    if (page().theme) {
+      const t = page().theme;
+      p.style.cssText += pageThemeStyle(t);
+      p.dataset.theme = t.id;
+      p.dataset.pattern = t.pattern;
+      p.dataset.cardStyle = t.cardStyle;
+      p.dataset.imageTreatment = t.imageTreatment;
+    }
     p.innerHTML = renderDesignSection(s, getProjects(), true);
     artboard.append(p);
     artboard.style.width = (device === "mobile" ? 390 : 1200) + "px";
@@ -218,7 +227,7 @@ export function mountPageDesigner({ element, getProfile, getProjects, chooseMedi
     box.dataset.motionDelay = n.motionDelay;
     box.setAttribute("style", designNodeStyle(n, section().nodes.indexOf(n)));
     box.innerHTML = '<div class="canvas-content">' + renderDesignNode(n, getProjects(), true) + "</div>";
-    box.classList.toggle("canvas-node-round",n.type==="button"&&n.width===n.height&&n.radius>=n.width/2);
+    box.classList.toggle("canvas-node-round", n.type === "button" && n.width === n.height && n.radius >= n.width / 2);
     box.classList.toggle("canvas-mobile-hidden", n.mobileHidden);
     box.classList.toggle("canvas-node-hidden", n.hidden);
     paintSelection();
@@ -302,6 +311,33 @@ export function mountPageDesigner({ element, getProfile, getProjects, chooseMedi
     inspector.replaceChildren();
     const n = selected(), s = section();
     if (!n) {
+      const themeGroup = group("ธีมของหน้านี้"), currentTheme = page().theme;
+      field(themeGroup, "ชุดสีและตัวอักษร", currentTheme?.id || "website", (value) => {
+        const theme = value === "website" ? pageThemeSchema.parse({ ...getProfile().website.theme, id: "website", name: "Website", headingFont: getProfile().website.theme.font }) : getPageTheme(value);
+        applyPageTheme(read()[pageKey], theme, currentTheme || getProfile().website.theme);
+        renderCanvas();
+        queueMicrotask(renderInspector);
+      }, { options: [["website", "ตามเว็บไซต์"], ...Object.values(PAGE_THEMES).map((theme) => [theme.id, theme.name]), ...currentTheme && !PAGE_THEMES[currentTheme.id] && currentTheme.id !== "website" ? [[currentTheme.id, currentTheme.name]] : []] });
+      if (currentTheme) {
+        const details = node("details", void 0, "designer-theme-details"), fields = node("div", void 0, "designer-property-grid");
+        details.append(node("summary", "ปรับธีม"), fields);
+        themeGroup.append(details);
+        for (const [key, label] of [["background", "พื้นหน้า"], ["ink", "ตัวอักษร"], ["accent", "สีหลัก"], ["surface", "พื้นรอง"], ["footer", "พื้นท้ายเว็บ"], ["footerInk", "ตัวอักษรท้ายเว็บ"]]) field(fields, label, currentTheme[key], (value) => {
+          const old = copy(page().theme), theme = { ...old, [key]: value };
+          applyPageTheme(read()[pageKey], theme, old);
+          renderCanvas();
+        }, { type: "color" });
+        field(details, "ฟอนต์หัวเรื่อง", currentTheme.headingFont, (value) => {
+          const old = copy(page().theme);
+          applyPageTheme(read()[pageKey], { ...old, headingFont: value }, old);
+          renderCanvas();
+        }, { options: ["IBM Plex Sans", "Manrope", "Inter", "Georgia"] });
+        field(details, "ฟอนต์เนื้อหา", currentTheme.font, (value) => {
+          const old = copy(page().theme);
+          applyPageTheme(read()[pageKey], { ...old, font: value }, old);
+          renderCanvas();
+        }, { options: ["IBM Plex Sans", "Manrope", "Inter"] });
+      }
       const g = group("ส่วนของหน้า");
       field(g, "ชื่อส่วน", s.name, (v) => section().name = v);
       field(g, "สีพื้น", s.background, (v) => {
@@ -423,7 +459,7 @@ export function mountPageDesigner({ element, getProfile, getProjects, chooseMedi
       }
       const style = group("รูปแบบปุ่ม");
       field(style, "แบบปุ่ม", n.buttonStyle, (v) => {
-        selected().color = ["solid","gradient"].includes(v) ? "#ffffff" : getProfile().website.theme.ink;
+        selected().color = ["solid", "gradient"].includes(v) ? "#ffffff" : getProfile().website.theme.ink;
         updateNode("buttonStyle", v);
         queueMicrotask(renderInspector);
       }, { options: [["solid", "พื้นทึบ"], ["outline", "เส้นขอบ"], ["text", "ข้อความ"], ["soft", "สีอ่อน"], ["gradient", "ไล่สี"]] });
@@ -532,8 +568,8 @@ export function mountPageDesigner({ element, getProfile, getProjects, chooseMedi
       selectedId = "";
     });
   }, onDefault: resetDefault });
-  function showFormats() {
-    return templateLibrary.open();
+  function showFormats(id) {
+    return templateLibrary.open(typeof id === "string" ? id : void 0);
   }
   async function resetDefault() {
     await checkpoint("ก่อนกลับ Default · " + pageKey, "default");
@@ -832,7 +868,13 @@ export function mountPageDesigner({ element, getProfile, getProjects, chooseMedi
     renderInspector();
     updateHistory();
   }
-  return { render, resize, reset() {
+  return { render, resize, openTemplate(id, key) {
+    if (["about", "work", "contact"].includes(key)) pageKey = key;
+    sectionId = "";
+    selectedId = "";
+    render();
+    return templateLibrary.open(id);
+  }, reset() {
     seeds = {};
     past = [];
     future = [];

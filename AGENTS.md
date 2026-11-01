@@ -12,4 +12,4 @@ Run npm run test and npm run build after relevant changes. Verify save/reload, i
 
 ## Reference-based AI templates
 
-When asked to add a template from a website reference, follow AI-TEMPLATES.md and the version 1 JSON schema in packages/shared/template-kit.ts. Validate and import the JSON through the template tool; no application code changes are needed for a new custom template. Preview it in Studio and preserve the current website until the user applies it.
+When asked to add a template from a website reference, follow AI-TEMPLATES.md. Start with npm run template:agent to prepare the brief, compact template and schema. Inspect the reference, create a distinct theme (colors, typography, surfaces, buttons, cards and motion) in addition to layout, validate and import through the template tool, then open its previewUrl and studioUrl. No application code edits or user JSON copy/paste are needed. Preserve the active website until the user applies the template.

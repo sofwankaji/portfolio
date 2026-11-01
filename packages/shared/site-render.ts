@@ -1,7 +1,7 @@
 import {esc,renderProjectCard,projectCover,type Profile,type Project} from './content.ts';
 import {siteHead,siteHeader,siteFooter,globe,arrow,lineBreaks,buttonContents} from './site-shell.ts';
 import {renderDesignPage} from './page-design-render.ts';
-function customPage(p:Profile,key:'about'|'work'|'contact',title:string,description:string,projects:Project[]){const page=p.website.designer[key];return siteHead(p,title,description)+(page.hideHeader?'':siteHeader(p,key))+`<main id="main">${renderDesignPage(page,projects)}</main>`+(page.hideFooter?'<script src="/editorial.js" defer></script></body></html>':siteFooter(p));}
+function customPage(p:Profile,key:'about'|'work'|'contact',title:string,description:string,projects:Project[]){const page=p.website.designer[key],themed=page.theme?{...p,website:{...p.website,theme:{...p.website.theme,...page.theme}}}:p;return siteHead(themed,title,description)+(page.hideHeader?'':siteHeader(themed,key))+`<main id="main">${renderDesignPage(page,projects)}</main>`+(page.hideFooter?'<script src="/editorial.js" defer></script></body></html>':siteFooter(themed));}
 
 export function renderAbout(p:Profile,all:Project[]){
  if(p.website.designer.about.enabled)return customPage(p,'about',p.website.labels.about,p.intro,all);

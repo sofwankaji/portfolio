@@ -1,11 +1,12 @@
 import type {Profile,Project} from './content.ts';
 import type {DesignNode,DesignSection,DesignPage,DesignPageKey} from './page-design.ts';
 import {designNodeSchema,designSectionSchema} from './page-design.ts';
+import {getPageTheme,applyPageTheme,pageThemeStyle} from './page-theme.ts';
 import {BUTTON_ICONS} from './design-buttons.ts';
 const e=(v:unknown)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 const cover=(p:Project)=>p.cover?.src||'/covers/'+(p.category==='analysis'?'connections':p.category==='automation'?'workflow':'sales')+'.svg';
 const cw=(v:number)=>`${Number((v/12).toFixed(4))}cqw`;
-export function designNodeStyle(n:DesignNode,order=0){return `left:${n.x/12}%;top:${cw(n.y)};width:${n.width/12}%;min-height:${cw(n.height)};--node-height:${cw(n.height)};--node-ratio:${n.width}/${n.height};--node-font:${cw(n.fontSize)};--mobile-font:${Math.min(n.fontSize,n.tag==='h1'?46:n.tag==='h2'?34:24)}px;font-size:var(--node-font);font-family:${n.font==='inherit'?'inherit':"'"+n.font+"', 'Noto Sans Thai', sans-serif"};font-weight:${n.weight};font-style:${n.italic?'italic':'normal'};text-align:${n.align};line-height:${n.lineHeight};color:${n.color};--node-background:${n.background};--node-hover-bg:${n.hoverBackground};--node-hover-color:${n.hoverColor};--node-border:${n.borderWidth}px;--round-width:${Math.min(n.width,180)}px;--node-radius:${cw(n.radius)};opacity:${n.opacity};z-index:${order+1}`;}
+export function designNodeStyle(n:DesignNode,order=0){return `left:${n.x/12}%;top:${cw(n.y)};width:${n.width/12}%;min-height:${cw(n.height)};--node-height:${cw(n.height)};--node-ratio:${n.width}/${n.height};--node-font:${cw(n.fontSize)};--mobile-font:${Math.min(n.fontSize,n.tag==='h1'?46:n.tag==='h2'?34:24)}px;font-size:var(--node-font);font-family:${n.font==='inherit'?'inherit':"'"+n.font+"', 'Noto Sans Thai', sans-serif"};--node-heading-font:${n.font==='inherit'?'var(--canvas-heading-font,var(--site-font))':"'"+n.font+"'"};font-weight:${n.weight};font-style:${n.italic?'italic':'normal'};text-align:${n.align};line-height:${n.lineHeight};color:${n.color};--node-background:${n.background};--node-hover-bg:${n.hoverBackground};--node-hover-color:${n.hoverColor};--node-border:${n.borderWidth}px;--round-width:${Math.min(n.width,180)}px;--node-radius:${cw(n.radius)};opacity:${n.opacity};z-index:${order+1}`;}
 export function renderDesignNode(n:DesignNode,projects:Project[],editing=false){
  if(n.type==='text')return `<${n.tag} class="canvas-text"${editing?' data-editable-text':''}>${e(n.text)}</${n.tag}>`;
  if(n.type==='image')return n.image?`<img class="canvas-image" src="${e(n.image.src)}" alt="${e(n.image.alt)}" style="object-fit:${n.fit};object-position:${n.focalX}% ${n.focalY}%" loading="lazy" draggable="false">`:`<div class="canvas-image-placeholder" aria-label="Image"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor"><rect x="7" y="7" width="50" height="50" rx="4"/><circle cx="23" cy="22" r="5"/><path d="m8 47 14-14 11 11 10-19 14 23"/></svg></div>`;
@@ -19,7 +20,7 @@ export function renderDesignSection(s:DesignSection,projects:Project[],editing=f
  const height=Math.max(s.height,...s.nodes.filter(n=>!n.hidden&&n.type==='projects').map(n=>n.y+Math.ceil(Math.min(projects.filter(p=>p.status==='published'&&!p.keepDraft).length,n.limit)/n.columns)*(n.width/n.columns*.79+64)+40));
  return `<section class="canvas-section" id="design-${s.id}" data-section-id="${s.id}" style="background:${s.background};--section-height:${cw(height)}"><div class="canvas-section-inner" style="min-height:var(--section-height)">${s.nodes.map((n,i)=>n.hidden&&!editing?'':`<div class="canvas-node canvas-node-${n.type}${n.type==='button'&&n.width===n.height&&n.radius>=n.width/2?' canvas-node-round':''}${n.mobileHidden?' canvas-mobile-hidden':''}${n.hidden?' canvas-node-hidden':''}" data-node-id="${n.id}" data-canvas-motion="${n.motion}" data-motion-duration="${n.motionDuration}" data-motion-delay="${n.motionDelay}" style="${designNodeStyle(n,i)}"><div class="canvas-content">${renderDesignNode(n,projects,editing)}</div></div>`).join('')}</div></section>`;
 }
-export function renderDesignPage(p:DesignPage,projects:Project[],editing=false){return `<div class="canvas-page">${p.sections.map(s=>renderDesignSection(s,projects,editing)).join('')}</div>`;}
+export function renderDesignPage(p:DesignPage,projects:Project[],editing=false,mode:''|'desktop'|'mobile'=''){return `<div class="canvas-page${mode?' is-'+mode:''}"${p.theme?` data-theme="${p.theme.id}" data-pattern="${p.theme.pattern}" data-card-style="${p.theme.cardStyle}" data-image-treatment="${p.theme.imageTreatment}" style="${pageThemeStyle(p.theme)}"`:""}>${p.sections.map(s=>renderDesignSection(s,projects,editing)).join('')}</div>`;}
 
 // Converting copies the current content; simply opening Studio never changes it.
 export function seedDesignPage(profile:Profile,key:DesignPageKey,uid:()=>string):DesignPage{
@@ -27,18 +28,18 @@ export function seedDesignPage(profile:Profile,key:DesignPageKey,uid:()=>string)
  const n=(type:DesignNode['type'],values:Partial<DesignNode>)=>designNodeSchema.parse({id:uid(),type,x:80,y:80,width:600,height:120,color:t.ink,background:t.surface,lineHeight:values.tag&&values.tag!=='p'?1.12:1.4,align:type==='button'?'center':'left',...values});
  const section=(name:string,height:number,nodes:DesignNode[],background=t.background)=>designSectionSchema.parse({id:uid(),name,height,background,nodes});
  const work=(title:string)=>section('Selected work',1200,[n('text',{text:title,tag:'h2',fontSize:48,width:1040,height:90,y:64}),n('projects',{y:210,width:1040,height:860})]);
- if(key==='work')return {enabled:false,hideHeader:false,hideFooter:false,sections:[section('Introduction',420,[n('text',{text:w.workHeadline,tag:'h1',fontSize:78,width:1040,height:280})]),work(w.workTitle)]};
- if(key==='contact')return {enabled:false,hideHeader:false,hideFooter:false,sections:[section('Contact',760,[n('text',{text:w.contactTitle,tag:'h1',fontSize:94,width:800,height:280}),n('text',{text:w.contactIntro,y:400,width:650,height:140,fontSize:26}),n('button',{text:w.email,href:'mailto:'+w.email,y:590,width:640,height:80,color:'#ffffff',background:t.accent,radius:80,fontSize:24})])]};
+ if(key==='work')return {enabled:false,hideHeader:false,hideFooter:false,theme:null,sections:[section('Introduction',420,[n('text',{text:w.workHeadline,tag:'h1',fontSize:78,width:1040,height:280})]),work(w.workTitle)]};
+ if(key==='contact')return {enabled:false,hideHeader:false,hideFooter:false,theme:null,sections:[section('Contact',760,[n('text',{text:w.contactTitle,tag:'h1',fontSize:94,width:800,height:280}),n('text',{text:w.contactIntro,y:400,width:650,height:140,fontSize:26}),n('button',{text:w.email,href:'mailto:'+w.email,y:590,width:640,height:80,color:'#ffffff',background:t.accent,radius:80,fontSize:24})])]};
  const portrait=profile.aboutImage||profile.portrait;
  const sections=[section('Introduction',1120,[n('text',{text:w.heroTitle,tag:'h1',fontSize:84,width:1040,height:300}),n('text',{text:profile.intro,x:80,y:490,width:330,height:290,fontSize:25}),n('image',{image:portrait?{src:portrait.src,alt:portrait.alt}:null,x:510,y:450,width:610,height:600,focalX:profile.aboutFocalX,focalY:profile.aboutFocalY}),n('text',{text:w.note,x:80,y:850,width:330,height:90,fontSize:18,color:t.muted})])];
  if(w.showServices)sections.push(section('Expertise',680,[n('text',{text:w.servicesTitle,tag:'h2',fontSize:48,width:1040,height:110}),...w.services.slice(0,3).flatMap((s,i)=>[n('text',{text:s.title,tag:'h3',x:80+i*360,y:260,width:320,height:110,fontSize:30}),n('text',{text:s.description,x:80+i*360,y:400,width:320,height:200,fontSize:20})])]));
  if(w.showFeature)sections.push(section('Approach',760,[n('text',{text:w.featureTitle,tag:'h2',fontSize:58,x:80,y:120,width:470,height:220}),n('text',{text:w.featureBody,x:80,y:390,width:470,height:280,fontSize:22}),n(profile.featureImage?'image':'shape',{image:profile.featureImage?{src:profile.featureImage.src,alt:profile.featureImage.alt}:null,x:650,y:130,width:460,height:460,radius:profile.featureImage?0:240,background:t.accent,mobileHidden:!profile.featureImage})],t.surface));
  if(w.showSelectedWork)sections.push(work(w.workTitle));
- return {enabled:false,hideHeader:false,hideFooter:false,sections};
+ return {enabled:false,hideHeader:false,hideFooter:false,theme:null,sections};
 }
 
 export const DESIGN_FORMATS=[{id:'editorial',name:'Editorial',note:'หัวเรื่องใหญ่และพื้นที่ว่าง',category:'minimal'},{id:'spotlight',name:'Spotlight',note:'รูปโปรไฟล์คู่ข้อความ',category:'profile'},{id:'gallery',name:'Gallery',note:'ให้ผลงานเป็นจุดเด่น',category:'portfolio'},{id:'statement',name:'Statement',note:'ข้อความเรียบง่าย จัดกึ่งกลาง',category:'minimal'},{id:'bento',name:'Bento',note:'ภาพกับข้อความเป็นสัดส่วน',category:'portfolio'},{id:'panorama',name:'Panorama',note:'ภาพเต็มความกว้าง',category:'portfolio'},{id:'profile',name:'Profile',note:'รูปวงกลมและปุ่มติดต่อ',category:'profile'},{id:'quiet',name:'Quiet',note:'เรียบเล็ก เว้นพื้นที่อ่านสบาย',category:'minimal'}] as const;
-export function formatDesignPage(profile:Profile,key:DesignPageKey,format:string,uid:()=>string):DesignPage{
+function layoutDesignPage(profile:Profile,key:DesignPageKey,format:string,uid:()=>string):DesignPage{
  const base=seedDesignPage(profile,key,uid);if(format==='editorial')return base;
  const w=profile.website,t=w.theme,portrait=profile.aboutImage||profile.portrait;
  const n=(type:DesignNode['type'],v:Partial<DesignNode>)=>designNodeSchema.parse({id:uid(),type,x:80,y:80,width:1040,height:140,color:t.ink,background:t.surface,hoverBackground:t.accent,lineHeight:v.tag&&v.tag!=='p'?1.12:1.4,align:type==='button'?'center':'left',...v});
@@ -55,5 +56,7 @@ export function formatDesignPage(profile:Profile,key:DesignPageKey,format:string
  else lead=s('Statement',880,[n('text',{text:title,tag:'h1',fontSize:92,x:120,y:150,width:960,height:360,align:'center',motion:'stagger'}),n('text',{text:body,x:270,y:550,width:660,height:160,fontSize:24,align:'center',motion:'fade',motionDelay:.15}),n('button',{text:label,href:target,x:390,y:760,width:420,height:64,fontSize:20,background:t.accent,color:'#ffffff',radius:80})]);
  const sections=[lead];
  if(key!=='contact')sections.push(s('Selected work',1400,[n('text',{text:w.workTitle,tag:'h2',fontSize:44,height:90}),n('projects',{y:220,height:1100,columns:format==='gallery'?3:2,limit:9})]));
- return {enabled:false,hideHeader:false,hideFooter:false,sections};
+ return {enabled:false,hideHeader:false,hideFooter:false,theme:null,sections};
 }
+
+export function formatDesignPage(profile:Profile,key:DesignPageKey,format:string,uid:()=>string):DesignPage{return applyPageTheme(layoutDesignPage(profile,key,format,uid),getPageTheme(format),profile.website.theme);}

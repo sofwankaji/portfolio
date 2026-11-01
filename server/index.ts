@@ -6,14 +6,15 @@ import Busboy from 'busboy';
 import sharp from 'sharp';
 import {z} from 'zod';
 import {ROOT,CONTENT,ASSETS,HISTORY,safeJoin,atomic,projects,saveProject,saveDraft,readDraft,trashProject,readProfile,saveProfile,readProfileDraft,saveProfileDraft} from './store.ts';
-import {cleanProject,renderProject} from '../packages/shared/content.ts';
+import {cleanProject,renderProject,profileSchema} from '../packages/shared/content.ts';
 import {OUT,PREVIEW_OUT,buildStudio,buildPublic} from '../scripts/build.ts';
 import {readPreviewSnapshot,previewLiveScript} from './preview-state.ts';
 import {publishStatus,publishJobStatus,startPublish} from './publish.service.ts';
 import {preparePortfolio,reorderProjects,listTrash,restoreTrash} from './portfolio.service.ts';
 import {websiteVersions,versionIdSchema} from './website-versions.ts';
 import {templateLibrary} from './template-library.ts';
-import {templateExample,templateJsonSchema} from '../packages/shared/template-kit.ts';
+import {prepareTemplateAgent} from './template-agent.ts';
+import {templateExample,templateJsonSchema,compactTemplate,instantiateTemplate} from '../packages/shared/template-kit.ts';
 import {renderAbout,renderWork,renderContact} from '../packages/shared/site-render.ts';
 let previewVersion='';
 async function ensurePreview(){const snapshot=await readPreviewSnapshot();if(snapshot.version!==previewVersion){const result=await buildPublic(true);previewVersion=result.version!;}return previewVersion;}
@@ -53,8 +54,9 @@ async function studioHandler(req:http.IncomingMessage,res:http.ServerResponse){
    if(req.method==='GET'&&parts[1]==='publish'&&parts[2]==='job')return send(res,await publishJobStatus());
    if(req.method==='POST'&&parts[1]==='publish'&&parts.length===2){const result=await startPublish(await json(req),serial);return send(res,result,'upToDate' in result?200:202);}
    if(req.method==='PUT'&&parts[1]==='profile'&&parts[2]==='draft'){const raw=await json(req);return send(res,await serial(()=>saveProfileDraft(raw)));}
+   if(req.method==='POST'&&parts[1]==='templates'&&parts[2]==='agent-job'){const raw=await json(req);return send(res,await serial(()=>prepareTemplateAgent(raw)),201);}
    if(req.method==='GET'&&parts[1]==='templates'&&parts[2]==='schema')return send(res,templateJsonSchema());
-   if(req.method==='GET'&&parts[1]==='templates'&&parts[2]==='example')return send(res,templateExample());
+   if(req.method==='GET'&&parts[1]==='templates'&&parts[2]==='example')return send(res,compactTemplate(templateExample()));
    if(req.method==='GET'&&parts[1]==='templates')return send(res,parts[2]?await templateLibrary.get(parts[2]):await templateLibrary.list());
    if(req.method==='POST'&&parts[1]==='templates'){const raw=await json(req);return send(res,await serial(()=>templateLibrary.add(raw)),201);}
    if(req.method==='GET'&&parts[1]==='profile'&&parts[2]==='versions')return send(res,await websiteVersions.list());
@@ -72,6 +74,7 @@ async function studioHandler(req:http.IncomingMessage,res:http.ServerResponse){
    return send(res,{error:'Not found'},404);
   }
   if(!['GET','HEAD'].includes(req.method||''))return send(res,{error:'Method not allowed'},405);
+  if(parts[0]==='preview'&&parts[1]==='template'&&parts[2]){const template=await templateLibrary.get(parts[2]),key=z.enum(['about','work','contact']).parse(parts[3]||template.pages[0]);if(!template.pages.includes(key))throw new Error('Template ไม่รองรับหน้านี้');const snapshot=await readPreviewSnapshot(),design=instantiateTemplate(template,snapshot.profile,randomUUID);design.enabled=true;const p=profileSchema.parse({...snapshot.profile,website:{...snapshot.profile.website,designer:{...snapshot.profile.website.designer,[key]:design}}});let html=key==='work'?renderWork(p,snapshot.projects):key==='contact'?renderContact(p):renderAbout(p,snapshot.projects);html=html.replace(/(<a\b[^>]*href=)"\/(?!\/)([^"]*)"/g,'$1"http://127.0.0.1:4173/$2" target="_blank" rel="noopener"');res.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});return res.end(html);}
   if(parts[0]==='preview'&&parts[1]==='website'&&parts[2]){const p=await websiteVersions.get(versionIdSchema.parse(parts[2])),snapshot=await readPreviewSnapshot(),key=parts[3]||'about';let html=key==='work'?renderWork(p,snapshot.projects):key==='contact'?renderContact(p):renderAbout(p,snapshot.projects);html=html.replace(/(<a\b[^>]*href=)"\/(?!\/)([^"]*)"/g,'$1"http://127.0.0.1:4173/$2" target="_blank" rel="noopener"');res.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});return res.end(html);}
   if(parts[0]==='preview'&&parts[1]){const id=idSchema.parse(parts[1]),snapshot=await readPreviewSnapshot(),all=snapshot.projects,profile=snapshot.profile,p=all.find(p=>p.id===id);if(!p)return send(res,{error:'Not found'},404);res.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store'});return res.end(renderProject(p,all,true,profile));}
   if(parts[0]==='assets')return await file(res,ASSETS,decodeURIComponent(parts.slice(1).join('/')),req.method==='HEAD');

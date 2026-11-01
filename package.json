@@ -13,7 +13,8 @@
     "template:check": "tsx scripts/template-tool.ts check",
     "template:import": "tsx scripts/template-tool.ts import",
     "template:schema": "tsx scripts/template-tool.ts schema",
-    "template:example": "tsx scripts/template-tool.ts example"
+    "template:example": "tsx scripts/template-tool.ts example",
+    "template:agent": "tsx scripts/template-tool.ts agent"
   },
   "dependencies": {
     "@tiptap/core": "^3.0.0",
